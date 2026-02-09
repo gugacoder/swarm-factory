@@ -52,3 +52,4 @@ D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
 
 ## Session Notes
 Session 1 (Initializer): Harness inicializado para onda 01-new-concepts — 15 features, todas failing.
+Session 2 (Initializer — revalidacao): Contexto reabsorvido (4 specs, 13 PRPs). Features.json validado — 15 features cobrindo todos os PRPs, dependencias corretas, testes especificos. Nenhuma alteracao necessaria.
