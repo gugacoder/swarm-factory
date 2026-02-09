@@ -1,0 +1,54 @@
+# Agent Progress — Swarm Factory / 01-new-concepts
+
+## Current Status
+Harness inicializado. 15 features planejadas, todas em status "failing" (aguardando implementacao).
+
+## Planning Path
+D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
+- 02-specs/: requirements.md, user-stories.md, design.md, er.md
+- 03-prps/: PRP-001 a PRP-013
+
+## Environment
+- Stack: Node.js (ES Modules .mjs), ajv (validacao), node: built-ins
+- Workspace: D:\sources\_unowned\swarm-factory\worktrees\01-new-concepts
+- Factory: D:\sources\_unowned\swarm-factory
+- Package manager: npm
+- Dev server: npm run tooling (dashboard)
+- Teste: validacao manual via node (sem framework de teste formal)
+- Commits: Conventional Commits pt-BR
+
+## Features
+
+[ ] F-001 — Schemas JSON e modulo de validacao (priority 1, deps: nenhuma)
+[ ] F-002 — Biblioteca compartilhada — paths.mjs (priority 2, deps: nenhuma)
+[ ] F-003 — Biblioteca compartilhada — discovery.mjs (priority 3, deps: nenhuma)
+[ ] F-004 — Biblioteca compartilhada — artifacts.mjs (priority 4, deps: nenhuma)
+[ ] F-005 — API create-project.mjs (priority 5, deps: F-001, F-002, F-004)
+[ ] F-006 — API load-project.mjs (priority 6, deps: F-001, F-002, F-003)
+[ ] F-007 — API list-projects.mjs (priority 7, deps: F-003, F-006)
+[ ] F-008 — API init-workspace.mjs (priority 8, deps: F-004, F-006)
+[ ] F-009 — API get-status.mjs (priority 9, deps: F-001, F-006)
+[ ] F-010 — Harness MJS — loop unificado (priority 10, deps: F-008)
+[ ] F-011 — Resiliencia e gutter detection (priority 11, deps: F-010)
+[ ] F-012 — Webhooks e notificacoes (priority 12, deps: F-010)
+[ ] F-013 — Thin wrappers — slash commands reescritos (priority 13, deps: F-005, F-008, F-009)
+[ ] F-014 — Worktrees e sessoes — declaracao e estrutura (priority 14, deps: F-008, F-010)
+[ ] F-015 — Documentacao de integracao do modulo Runs (priority 15, deps: F-005..F-012)
+
+## Architecture Decisions
+- ES Modules (.mjs) em toda a stack — substitui bash scripts
+- API deterministica em runs/.meta/api/ — CLI + SDK importavel
+- project.json como formato unico de projeto (substitui run configs atuais)
+- Dois formatos de filesystem: flat (runs/{slug}.json) e structured (runs/{slug}/project.json)
+- agent-harness.mjs substitui agent-harness.sh como loop principal
+- Slash commands viram thin wrappers que delegam para API MJS
+- Validacao via ajv contra JSON Schemas
+- Unica dependencia externa: ajv — resto usa node: built-ins
+- Cross-platform: funciona em Windows sem Git Bash/MSYS2
+- Workspace autonomo apos inicializacao (independente do swarm-factory)
+- Loop unificado: max_features=1 substitui conceito de "sessao manual"
+- Gutter detection: max_retries falhas -> rotacao de contexto -> skip
+- Webhooks fire-and-forget com fetch nativo
+
+## Session Notes
+Session 1 (Initializer): Harness inicializado para onda 01-new-concepts — 15 features, todas failing.

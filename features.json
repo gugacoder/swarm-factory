@@ -1,0 +1,308 @@
+[
+  {
+    "id": "F-001",
+    "title": "Schemas JSON e módulo de validação",
+    "description": "Criar project.schema.json e features.schema.json em runs/.meta/schema/, e o módulo validate.mjs em runs/.meta/lib/ que exporta validateProject(), validateFeatures() e loadSchema(). Usar ajv como validador. Schemas conforme er.md — project.json com campos version, slug, name, description, specs, workspace, agent (AgentConfig), artifacts; features.json como array de features com id, title, description, status, priority, dependencies, retries, prp_ids.",
+    "status": "failing",
+    "priority": 1,
+    "dependencies": [],
+    "retries": 0,
+    "prp_ids": ["PRP-001"],
+    "tests": [
+      "Arquivo runs/.meta/schema/project.schema.json existe e é JSON Schema válido",
+      "Arquivo runs/.meta/schema/features.schema.json existe e é JSON Schema válido",
+      "Arquivo runs/.meta/lib/validate.mjs existe e exporta validateProject, validateFeatures, loadSchema",
+      "validateProject() retorna { valid: true } para um project.json válido conforme exemplo do PRP-001",
+      "validateProject() retorna { valid: false, errors: [...] } para JSON com campos ausentes ou inválidos",
+      "validateFeatures() retorna { valid: true } para um features.json válido conforme exemplo do PRP-001",
+      "validateFeatures() retorna { valid: false, errors: [...] } para features com status inválido",
+      "ajv está instalado como dependência no package.json",
+      "Schemas são carregados via import.meta.url com node:fs/promises"
+    ]
+  },
+  {
+    "id": "F-002",
+    "title": "Biblioteca compartilhada — paths.mjs",
+    "description": "Criar runs/.meta/lib/paths.mjs que exporta resolvePath(basePath, targetPath), resolveArtifacts(workspace, artifacts) e normalizeSlashes(path). resolvePath resolve paths relativos (./ ou ../) a partir do basePath e retorna absolutos direto. Deve funcionar em Windows e Linux usando node:path. Não verificar existência no filesystem.",
+    "status": "failing",
+    "priority": 2,
+    "dependencies": [],
+    "retries": 0,
+    "prp_ids": ["PRP-002"],
+    "tests": [
+      "Arquivo runs/.meta/lib/paths.mjs existe e exporta resolvePath, resolveArtifacts, normalizeSlashes",
+      "resolvePath('D:\\sources\\app', './features.json') retorna 'D:\\sources\\app\\features.json'",
+      "resolvePath('D:\\sources\\app', 'D:\\specs\\mvp') retorna 'D:\\specs\\mvp' (absoluto direto)",
+      "resolvePath('/home/user/project', '../shared/specs') retorna '/home/user/shared/specs'",
+      "resolveArtifacts resolve todos os paths de artefatos de relativos para absolutos",
+      "normalizeSlashes funciona para separadores Windows e Linux",
+      "Usa apenas node: built-ins (node:path)"
+    ]
+  },
+  {
+    "id": "F-003",
+    "title": "Biblioteca compartilhada — discovery.mjs",
+    "description": "Criar runs/.meta/lib/discovery.mjs que exporta discoverProjects(runsDir) e resolveProjectPath(runsDir, identifier). discoverProjects busca project.json nos dois formatos: flat (runs/{slug}.json na raiz) e structured (runs/{slug}/project.json ou runs/{slug}/{milestone}/project.json). Exclui .meta/ e workspaces/ do scan. Usa node:fs/promises com readdir.",
+    "status": "failing",
+    "priority": 3,
+    "dependencies": [],
+    "retries": 0,
+    "prp_ids": ["PRP-002"],
+    "tests": [
+      "Arquivo runs/.meta/lib/discovery.mjs existe e exporta discoverProjects, resolveProjectPath",
+      "discoverProjects retorna array de { path, format } para ambos os formatos",
+      "Formato flat: detecta arquivos .json na raiz de runs/ (exceto .meta/ e workspaces/)",
+      "Formato structured: detecta project.json dentro de subdiretórios de runs/",
+      "resolveProjectPath encontra path por slug",
+      "resolveProjectPath retorna null se slug não encontrado",
+      "Usa apenas node: built-ins (node:fs/promises, node:path)"
+    ]
+  },
+  {
+    "id": "F-004",
+    "title": "Biblioteca compartilhada — artifacts.mjs",
+    "description": "Criar runs/.meta/lib/artifacts.mjs que exporta getDefaultArtifacts(version), getDefaultSessionTemplate(version), ensureArtifactDirs(workspace, artifacts) e readArtifact(workspace, artifacts, key). Artefatos padrão v1 conforme er.md: harness_config, harness_script, setup_script, features, progress, state, pid, sessions, current_milestone.",
+    "status": "failing",
+    "priority": 4,
+    "dependencies": [],
+    "retries": 0,
+    "prp_ids": ["PRP-002"],
+    "tests": [
+      "Arquivo runs/.meta/lib/artifacts.mjs existe e exporta getDefaultArtifacts, getDefaultSessionTemplate, ensureArtifactDirs, readArtifact",
+      "getDefaultArtifacts(1) retorna Record com todos os 9 artefatos da versão 1 conforme er.md",
+      "getDefaultSessionTemplate(1) retorna { pattern, files, dirs } com worktree em dirs",
+      "ensureArtifactDirs cria diretórios para artefatos do tipo dir",
+      "readArtifact lê conteúdo de artefato file e retorna null se não existir",
+      "Usa apenas node: built-ins"
+    ]
+  },
+  {
+    "id": "F-005",
+    "title": "API create-project.mjs",
+    "description": "Criar runs/.meta/api/create-project.mjs que exporta createProject(params) e funciona como CLI. Recebe slug, name, workspace, specs, harness, model, max_turns, max_iterations, max_features, max_retries, format. Monta project.json v1 com artifacts padrão, valida contra schema, escreve no formato flat ou structured. Não sobrescreve existente. CLI via node:util.parseArgs.",
+    "status": "failing",
+    "priority": 5,
+    "dependencies": ["F-001", "F-002", "F-004"],
+    "retries": 0,
+    "prp_ids": ["PRP-003"],
+    "tests": [
+      "Arquivo runs/.meta/api/create-project.mjs existe e exporta createProject",
+      "createProject({slug, name, workspace, specs, harness}) cria project.json válido",
+      "JSON gerado contém version:1, todos os campos obrigatórios e artifacts padrão",
+      "Formato structured: cria runs/{slug}/project.json com mkdir do diretório",
+      "Formato flat: cria runs/{slug}.json",
+      "Lança erro se arquivo já existir no destino",
+      "Lança erro se validação falhar (campo obrigatório ausente)",
+      "Funciona como CLI: node runs/.meta/api/create-project.mjs --slug x --name y ...",
+      "CLI aceita --max-turns (dash) como alias de max_turns (underscore)"
+    ]
+  },
+  {
+    "id": "F-006",
+    "title": "API load-project.mjs",
+    "description": "Criar runs/.meta/api/load-project.mjs que exporta loadProject(pathOrOptions). Aceita path direto ou { slug, runsDir }. Lê JSON, valida contra schema, resolve todos os paths (specs relativo ao workspace, artifacts), retorna objeto enriquecido com _source e _resolved. Funciona como CLI.",
+    "status": "failing",
+    "priority": 6,
+    "dependencies": ["F-001", "F-002", "F-003"],
+    "retries": 0,
+    "prp_ids": ["PRP-004"],
+    "tests": [
+      "Arquivo runs/.meta/api/load-project.mjs existe e exporta loadProject",
+      "loadProject(path) lê, valida e retorna objeto com _source e _resolved",
+      "loadProject({ slug, runsDir }) encontra projeto via discovery e carrega",
+      "_resolved.specs contém path absoluto resolvido",
+      "_resolved.artifacts contém todos os paths absolutos dos artefatos",
+      "Lança erro se JSON inválido com detalhes de validação",
+      "Lança erro se slug não encontrado",
+      "Funciona como CLI: node runs/.meta/api/load-project.mjs runs/slug/project.json"
+    ]
+  },
+  {
+    "id": "F-007",
+    "title": "API list-projects.mjs",
+    "description": "Criar runs/.meta/api/list-projects.mjs que exporta listProjects({ runsDir, format }). Usa discoverProjects + loadProject para cada projeto encontrado. Retorna array de ProjectSummary { slug, name, workspace, harness, format, _source, _error? }. CLI com formato table ou json.",
+    "status": "failing",
+    "priority": 7,
+    "dependencies": ["F-003", "F-006"],
+    "retries": 0,
+    "prp_ids": ["PRP-005"],
+    "tests": [
+      "Arquivo runs/.meta/api/list-projects.mjs existe e exporta listProjects",
+      "listProjects() retorna array de ProjectSummary com slug, name, workspace, harness, format",
+      "Projetos com JSON inválido aparecem com _error, não são ignorados",
+      "CLI --format table imprime tabela formatada",
+      "CLI --format json imprime JSON array",
+      "Exclui .meta/ e workspaces/ do discovery"
+    ]
+  },
+  {
+    "id": "F-008",
+    "title": "API init-workspace.mjs",
+    "description": "Criar runs/.meta/api/init-workspace.mjs que exporta initWorkspace(pathOrOptions). Carrega projeto, cria workspace se necessário, gera agent-harness.json com paths resolvidos e notifications:[], copia agent-harness.mjs do template do harness, gera commands do harness no workspace (.claude/commands/vibe/ para claude-code), cria dirs de artefatos, cria .sessions/.current-milestone, adiciona .sessions/ ao .gitignore, cria agent-progress.txt vazio se não existir. Reinicialização sobrescreve harness mas não features.json nem progress.",
+    "status": "failing",
+    "priority": 8,
+    "dependencies": ["F-004", "F-006"],
+    "retries": 0,
+    "prp_ids": ["PRP-006"],
+    "tests": [
+      "Arquivo runs/.meta/api/init-workspace.mjs existe e exporta initWorkspace",
+      "Gera agent-harness.json no workspace com todos os paths resolvidos e _version:1",
+      "Copia agent-harness.mjs do template do harness escolhido",
+      "Gera .claude/commands/vibe/ para harness claude-code",
+      "Cria diretório .sessions/",
+      "Cria .sessions/.current-milestone com o slug",
+      "Adiciona .sessions/ ao .gitignore (cria .gitignore se não existir)",
+      "Cria agent-progress.txt vazio se não existir",
+      "Reinicialização sobrescreve harness.json e harness.mjs mas preserva features.json e progress",
+      "Funciona como CLI: node runs/.meta/api/init-workspace.mjs --slug x"
+    ]
+  },
+  {
+    "id": "F-009",
+    "title": "API get-status.mjs",
+    "description": "Criar runs/.meta/api/get-status.mjs que exporta getStatus(pathOrOptions). Carrega projeto, verifica workspace, lê features.json, computa contagem por status, verifica PID do loop (cross-platform), retorna objeto com slug, name, workspace, state, loop, features, progress. States: not_initialized, initialized, idle, running.",
+    "status": "failing",
+    "priority": 9,
+    "dependencies": ["F-001", "F-006"],
+    "retries": 0,
+    "prp_ids": ["PRP-007"],
+    "tests": [
+      "Arquivo runs/.meta/api/get-status.mjs existe e exporta getStatus",
+      "Retorna state='not_initialized' quando workspace não existe",
+      "Retorna state='initialized' quando workspace existe mas sem features.json",
+      "Retorna state='idle' quando features.json existe e loop não ativo",
+      "Retorna state='running' quando PID ativo detectado",
+      "features contém contagem por status (pending, in_progress, failing, blocked, skipped, passing)",
+      "progress é porcentagem arredondada (passing/total*100)",
+      "Verificação de PID funciona cross-platform (Windows e Unix)",
+      "CLI com --format table e --format json"
+    ]
+  },
+  {
+    "id": "F-010",
+    "title": "Harness MJS — loop unificado (agent-harness.mjs)",
+    "description": "Criar runs/.meta/harnesses/claude-code/agent-harness.mjs — script MJS autocontido do Ralph Wiggum Loop. Lê agent-harness.json, lê features.json, gerencia PID, graceful stop via .stop, loop: seleciona feature elegível (pending/failing, deps passing, menor priority), marca in_progress, cria session dir, spawna claude -p com args, captura output em output.jsonl, verifica resultado, atualiza state. Suporta env overrides: MAX_TURNS, MAX_ITERATIONS, MAX_FEATURES, MODEL. Sem gutter detection (PRP-009). Autocontido — apenas node: built-ins.",
+    "status": "failing",
+    "priority": 10,
+    "dependencies": ["F-008"],
+    "retries": 0,
+    "prp_ids": ["PRP-008"],
+    "tests": [
+      "Arquivo runs/.meta/harnesses/claude-code/agent-harness.mjs existe e é executável com node",
+      "Lê agent-harness.json do diretório corrente",
+      "Lê e recarrega features.json a cada iteração",
+      "Escreve PID em agent-harness.pid",
+      "Escreve estado em agent-harness.state (JSON com status, iteration, feature_id, etc.)",
+      "Seleciona feature elegível: status pending/failing, deps passing, ordenado por priority",
+      "Marca feature como in_progress antes de spawnar agente",
+      "Cria session dir em .sessions/{feature-id}/",
+      "Registra started_at e finished_at na sessão",
+      "Spawna claude com -p, --verbose, --output-format stream-json, --max-turns",
+      "Captura output em output.jsonl na session dir",
+      "Respeita MAX_FEATURES=1 (para após 1 feature)",
+      "Respeita MAX_ITERATIONS (para após N iterações)",
+      "Graceful stop via .stop file (aguarda feature atual)",
+      "Exit reasons: completed, stopped, iteration_limit, feature_limit, deps_impossible",
+      "É autocontido — sem imports externos, apenas node: built-ins"
+    ]
+  },
+  {
+    "id": "F-011",
+    "title": "Resiliência e gutter detection",
+    "description": "Adicionar ao agent-harness.mjs: gutter detection (incrementa retries por feature, após max_retries executa rotação de contexto, após max_retries*2 marca como skipped), rotação de contexto (registra no progress, executa rollback conforme agent.rollback: stash|reset|none, default stash), skip de feature, e arquivo agent-guardrails.md com lições aprendidas geradas deterministicamente.",
+    "status": "failing",
+    "priority": 11,
+    "dependencies": ["F-010"],
+    "retries": 0,
+    "prp_ids": ["PRP-009"],
+    "tests": [
+      "retries é incrementado em features.json após cada falha",
+      "Após max_retries falhas: rotação de contexto executada",
+      "Rotação registra no agent-progress.txt: [ROTAÇÃO] Feature {id}",
+      "Rollback executado conforme config: git stash (default), git reset --hard, ou none",
+      "Rollback registrado no agent-progress.txt: [ROLLBACK] ...",
+      "Após max_retries*2 falhas: feature marcada como skipped",
+      "Skip registrado no agent-progress.txt: [SKIP] Feature {id}",
+      "agent-guardrails.md criado/atualizado com lições aprendidas (fatos, não interpretações)",
+      "Feature skipped bloqueia naturalmente dependentes (skipped não satisfaz dependências)"
+    ]
+  },
+  {
+    "id": "F-012",
+    "title": "Webhooks e notificações",
+    "description": "Adicionar ao agent-harness.mjs: função notifyWebhooks(config, event, data) que filtra notifications por evento (ou wildcard *), envia HTTP POST com payload JSON contendo event, timestamp, project e data. Usar fetch nativo, try/catch individual por webhook, timeout 10s, fire-and-forget. Integrar nos pontos: feature_done, feature_skip, completed, stopped, error.",
+    "status": "failing",
+    "priority": 12,
+    "dependencies": ["F-010"],
+    "retries": 0,
+    "prp_ids": ["PRP-010"],
+    "tests": [
+      "Função notifyWebhooks existe no agent-harness.mjs",
+      "Filtra notifications cujos events incluem o evento ou '*'",
+      "Envia HTTP POST com Content-Type application/json",
+      "Payload contém event, timestamp, project (slug, name) e data",
+      "Timeout de 10s por webhook",
+      "Erro de webhook individual não impede os demais (try/catch)",
+      "Sem retry — fire-and-forget",
+      "Registra resultado no agent-progress.txt: [WEBHOOK] POST {url} → {status}",
+      "Integrado nos pontos: feature_done (passing), feature_skip (skipped), completed, stopped, error"
+    ]
+  },
+  {
+    "id": "F-013",
+    "title": "Thin wrappers — slash commands reescritos",
+    "description": "Reescrever os slash commands em .claude/commands/run/ (create.md, setup.md, code.md, loop.md, status.md) como thin wrappers que coletam parâmetros via chat e invocam a API MJS. /run:create coleta params → node runs/.meta/api/create-project.mjs. /run:setup identifica projeto → node init-workspace.mjs → /vibe:initialize. /run:code → MAX_FEATURES=1 node agent-harness.mjs. /run:loop → node agent-harness.mjs. /run:status → get-status.mjs ou list-projects.mjs.",
+    "status": "failing",
+    "priority": 13,
+    "dependencies": ["F-005", "F-008", "F-009"],
+    "retries": 0,
+    "prp_ids": ["PRP-011"],
+    "tests": [
+      "Arquivo .claude/commands/run/create.md reescrito como thin wrapper que invoca create-project.mjs",
+      "Arquivo .claude/commands/run/setup.md reescrito: invoca init-workspace.mjs + /vibe:initialize",
+      "Arquivo .claude/commands/run/code.md reescrito: invoca agent-harness.mjs com MAX_FEATURES=1",
+      "Arquivo .claude/commands/run/loop.md reescrito: invoca agent-harness.mjs sem limite",
+      "Arquivo .claude/commands/run/status.md reescrito: invoca get-status.mjs ou list-projects.mjs",
+      "Cada command tem no máximo ~30 linhas de markdown",
+      "Nenhum command reimplementa lógica — apenas coleta params e invoca API"
+    ]
+  },
+  {
+    "id": "F-014",
+    "title": "Worktrees e sessões — declaração e estrutura",
+    "description": "Garantir que session_template declara worktree em dirs, que o loop cria diretório worktree/ vazio em cada session dir, que .sessions/ está no .gitignore. O init-workspace.mjs já trata .gitignore (F-008). O loop (F-010) já cria session dirs. Verificar que tudo está correto e adicionar criação explícita do diretório worktree/ dentro de cada sessão.",
+    "status": "failing",
+    "priority": 14,
+    "dependencies": ["F-008", "F-010"],
+    "retries": 0,
+    "prp_ids": ["PRP-012"],
+    "tests": [
+      "session_template em agent-harness.json contém 'worktree' em dirs",
+      "Loop cria .sessions/{feature-id}/worktree/ como diretório vazio",
+      ".sessions/ presente no .gitignore do workspace",
+      "Monitor pode localizar worktrees via agent-harness.json → session_template → dirs",
+      "Diretório worktree/ é apenas placeholder — nenhuma lógica de git worktree"
+    ]
+  },
+  {
+    "id": "F-015",
+    "title": "Documentação de integração do módulo Runs",
+    "description": "Criar runs/.meta/README.md com documentação completa da interface externa do módulo Runs v2: visão geral, conceitos, guia rápido (criar projeto, inicializar, executar, status, listar), uso como SDK (import + assinaturas), formatos de arquivo (project.json, agent-harness.json, features.json, state), artefatos do workspace, configuração do agente, webhooks, sessões, graceful stop, gutter detection, troubleshooting. Tratar como caixa preta — interface, não implementação. pt-BR no texto, inglês no código.",
+    "status": "failing",
+    "priority": 15,
+    "dependencies": ["F-005", "F-006", "F-007", "F-008", "F-009", "F-010", "F-011", "F-012"],
+    "retries": 0,
+    "prp_ids": ["PRP-013"],
+    "tests": [
+      "Arquivo runs/.meta/README.md existe",
+      "Contém seções: Visão Geral, Conceitos, Guia Rápido, Uso como SDK, Formatos de Arquivo",
+      "Contém seções: Artefatos do Workspace, Configuração do Agente, Webhooks",
+      "Contém seções: Sessões de Feature, Graceful Stop, Gutter Detection, Troubleshooting",
+      "Cada operação CLI tem exemplo completo com output esperado",
+      "Cada função SDK tem assinatura, parâmetros, retorno e exemplo",
+      "Idioma: pt-BR no texto, inglês no código",
+      "Não documenta implementação interna — apenas interface externa",
+      "Marca worktrees/execução paralela como 'Futuro'"
+    ]
+  }
+]

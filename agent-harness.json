@@ -1,0 +1,8 @@
+{
+  "run": "swarm-factory_01-new-concepts--cc",
+  "project": "swarm-factory",
+  "milestone": "01-new-concepts",
+  "planning_path": "D:\\sources\\_unowned\\swarm-factory\\milestones\\01-new-concepts",
+  "harness": "claude-code",
+  "factory": "D:\\sources\\_unowned\\swarm-factory"
+}
