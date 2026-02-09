@@ -45,11 +45,12 @@
     "id": "F-003",
     "title": "Biblioteca compartilhada — discovery.mjs",
     "description": "Criar runs/.meta/lib/discovery.mjs que exporta discoverProjects(runsDir) e resolveProjectPath(runsDir, identifier). discoverProjects busca project.json nos dois formatos: flat (runs/{slug}.json na raiz) e structured (runs/{slug}/project.json ou runs/{slug}/{milestone}/project.json). Exclui .meta/ e workspaces/ do scan. Usa node:fs/promises com readdir.",
-    "status": "failing",
+    "status": "passing",
     "priority": 3,
     "dependencies": [],
     "retries": 0,
     "prp_ids": ["PRP-002"],
+    "completed_at": "2026-02-09T20:00:00Z",
     "tests": [
       "Arquivo runs/.meta/lib/discovery.mjs existe e exporta discoverProjects, resolveProjectPath",
       "discoverProjects retorna array de { path, format } para ambos os formatos",

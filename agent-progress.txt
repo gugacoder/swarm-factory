@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 01-new-concepts
 
 ## Current Status
-2/15 features passing. F-001, F-002 implementadas.
+3/15 features passing. F-001, F-002, F-003 implementadas.
 
 ## Planning Path
 D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
@@ -21,7 +21,7 @@ D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
 
 [x] F-001 — Schemas JSON e modulo de validacao (priority 1, deps: nenhuma)
 [x] F-002 — Biblioteca compartilhada — paths.mjs (priority 2, deps: nenhuma)
-[ ] F-003 — Biblioteca compartilhada — discovery.mjs (priority 3, deps: nenhuma)
+[x] F-003 — Biblioteca compartilhada — discovery.mjs (priority 3, deps: nenhuma)
 [ ] F-004 — Biblioteca compartilhada — artifacts.mjs (priority 4, deps: nenhuma)
 [ ] F-005 — API create-project.mjs (priority 5, deps: F-001, F-002, F-004)
 [ ] F-006 — API load-project.mjs (priority 6, deps: F-001, F-002, F-003)
@@ -55,3 +55,4 @@ Session 1 (Initializer): Harness inicializado para onda 01-new-concepts — 15 f
 Session 2 (Initializer — revalidacao): Contexto reabsorvido (4 specs, 13 PRPs). Features.json validado — 15 features cobrindo todos os PRPs, dependencias corretas, testes especificos. Nenhuma alteracao necessaria.
 Session 3 (Coding — F-001): Implementada F-001 — Schemas JSON e modulo de validacao. Criados project.schema.json e features.schema.json (draft-07) em runs/.meta/schema/, validate.mjs em runs/.meta/lib/ com ajv. 9/9 testes passing. Proxima: F-002 (paths.mjs).
 Session 4 (Coding — F-002): Implementada F-002 — paths.mjs. Funcoes resolvePath, resolveArtifacts, normalizeSlashes usando node:path. Cross-platform (Windows/Linux). 7/7 testes passing. Proxima: F-003 (discovery.mjs).
+Session 5 (Coding — F-003): Implementada F-003 — discovery.mjs. Funcoes discoverProjects (busca flat .json + structured project.json em subdirs, exclui .meta/ e workspaces/) e resolveProjectPath (resolve slug lendo JSON dos structured, comparando basename dos flat). Usa node:fs/promises e node:path. 7/7 testes passing. Proxima: F-004 (artifacts.mjs).
