@@ -1,0 +1,112 @@
+# ==============================================================================
+# Deploy (staging/production)
+#   docker compose up -d
+#   docker compose logs -f
+# ==============================================================================
+
+name: ${PROJECT}-${ENVIRONMENT}
+
+include:
+  - docker-compose.platform.yml
+
+services:
+
+  # ============================================================================
+  # LANDING NextJS
+  # ============================================================================
+  landing:
+    build:
+      context: apps/landing
+      dockerfile: Dockerfile
+    image: landing:${ENVIRONMENT}
+    restart: unless-stopped
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    networks:
+      internal:
+        aliases:
+          - landing.internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:${LANDING_PORT}/landing/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================================================
+  # HUB Vite
+  # ============================================================================
+  hub:
+    build:
+      context: apps/hub
+      dockerfile: Dockerfile
+    image: hub:${ENVIRONMENT}
+    restart: unless-stopped
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    networks:
+      internal:
+        aliases:
+          - hub.internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:${HUB_PORT}/hub/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ============================================================================
+  # BACKBONE Hono
+  # ============================================================================
+  backbone:
+    build:
+      context: apps/backbone
+      dockerfile: Dockerfile
+    image: backbone:${ENVIRONMENT}
+    restart: unless-stopped
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    networks:
+      internal:
+        aliases:
+          - backbone.internal
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:${BACKBONE_PORT}/backbone/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ============================================================================
+  # CADDY override — depends_on apps + portas publicas
+  # ============================================================================
+  caddy:
+    depends_on:
+      hub:
+        condition: service_healthy
+      backbone:
+        condition: service_healthy
+    networks:
+      - codr-net
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=codr-net
+      - traefik.http.routers.${PROJECT}-${ENVIRONMENT}-caddy.rule=Host(`${PUBLIC_DOMAIN}`)
+      - traefik.http.routers.${PROJECT}-${ENVIRONMENT}-caddy.entrypoints=websecure
+      - traefik.http.routers.${PROJECT}-${ENVIRONMENT}-caddy.tls.certresolver=letsencrypt
+      - traefik.http.services.${PROJECT}-${ENVIRONMENT}-caddy.loadbalancer.server.port=80
+
+networks:
+  internal:
+    driver: bridge
+  codr-net:
+    external: true

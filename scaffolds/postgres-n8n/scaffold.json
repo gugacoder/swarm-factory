@@ -1,0 +1,5 @@
+{
+  "name": "postgres-n8n",
+  "description": "Monorepo Next.js + LangGraph/Hono + PostgreSQL + n8n + Docker",
+  "stack": ["nextjs", "langgraph", "hono", "postgresql", "n8n", "docker", "shadcn"]
+}

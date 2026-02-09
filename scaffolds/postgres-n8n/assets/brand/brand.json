@@ -1,0 +1,28 @@
+{
+  "brand": "",
+  "title": "",
+  "description": "",
+  "slogan": "",
+  "themes": {
+    "light": {
+      "primary": "#6366f1",
+      "secondary": "#06b6d4",
+      "tertiary": "#4f46e5",
+      "accent": "#06b6d4",
+      "background": "#ffffff",
+      "surface": "#f8fafc",
+      "text": "#1e293b",
+      "textMuted": "#64748b"
+    },
+    "dark": {
+      "primary": "#818cf8",
+      "secondary": "#22d3ee",
+      "tertiary": "#a5b4fc",
+      "accent": "#22d3ee",
+      "background": "#0f172a",
+      "surface": "#1e293b",
+      "text": "#f1f5f9",
+      "textMuted": "#64748b"
+    }
+  }
+}

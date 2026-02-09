@@ -1,0 +1,43 @@
+{$PUBLIC_DOMAIN} {
+	# Raiz → landing (sem redirect, rewrite interno)
+	@root path /
+	rewrite @root /landing
+
+	# Health unificado (backbone agrega status de todos)
+	# Se backbone está fora, handle_errors retorna unhealthy em vez de 502
+	handle /health {
+		reverse_proxy {$BACKBONE_HOST}:{$BACKBONE_PORT} {
+			transport http {
+				dial_timeout 3s
+			}
+		}
+	}
+
+	handle_errors {
+		@health path /health
+		handle @health {
+			header Content-Type "application/json"
+			respond `{"status":"unhealthy","services":{"backbone":"unreachable"}}` 503
+		}
+	}
+
+	# Landing
+	handle /landing/* {
+		reverse_proxy {$LANDING_HOST}:{$LANDING_PORT}
+	}
+
+	# Hub
+	handle /hub/* {
+		reverse_proxy {$HUB_HOST}:{$HUB_PORT}
+	}
+
+	# Backbone
+	handle /backbone/* {
+		reverse_proxy {$BACKBONE_HOST}:{$BACKBONE_PORT}
+	}
+
+	# N8N workflows (sempre na rede interna Docker)
+	handle /workflows/* {
+		reverse_proxy n8n.internal:5678
+	}
+}

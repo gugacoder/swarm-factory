@@ -1,0 +1,10 @@
+{
+  "name": "gestao-pessoas",
+  "private": true,
+  "workspaces": [
+    "tooling"
+  ],
+  "scripts": {
+    "tooling": "npm run dev --workspace=tooling"
+  }
+}

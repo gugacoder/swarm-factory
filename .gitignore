@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Data (volumes Docker locais)
+data/
+
+# Build outputs
+out/
+dist/
+.next/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code
+settings.local.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Misc
+*.tsbuildinfo
+nul
+.tmp/
+
+# Agent Harness — arquivos operacionais pesados
+output.jsonl
+output.txt
+pid
+.stop
+agent-harness.pid
+agent-harness.state
+
+# Worktrees (workspaces de runs)
+worktree/

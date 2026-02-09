@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "*": "allow",
+    "bash": "allow",
+    "edit": "allow",
+    "external_directory": {
+      "../../../projects/**": "allow"
+    }
+  },
+  "default_agent": "coder",
+  "command": {
+    "vibe-init": {
+      "template": "Inicialize o harness. Leia .sessions/.current-milestone para identificar o milestone, depois siga as instruções do agent initializer.",
+      "description": "Inicializa agent harness",
+      "agent": "initializer"
+    },
+    "vibe-code": {
+      "template": "Execute o protocolo de startup e implemente a próxima feature.",
+      "description": "Sessão incremental de coding",
+      "agent": "coder"
+    }
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true
+  }
+}

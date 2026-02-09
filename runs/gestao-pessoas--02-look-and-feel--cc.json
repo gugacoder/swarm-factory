@@ -1,0 +1,9 @@
+{
+  "name": "gestao-pessoas--02-look-and-feel--cc",
+  "project": "gestao-pessoas",
+  "milestone": "02-look-and-feel",
+  "milestone_path": "milestones/02-look-and-feel",
+  "scaffold": null,
+  "harness": "claude-code",
+  "location": "D:\\sources\\processa\\gestao-pessoas"
+}

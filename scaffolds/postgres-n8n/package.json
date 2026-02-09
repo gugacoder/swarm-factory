@@ -1,0 +1,52 @@
+{
+  "name": "app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "printenv": "dotenv -o -e .env -- printenv",
+
+    "dev:all": "npm run dev:apps",
+
+    "dev:apps": "concurrently -n hub,backbone,landing -c blue,green,magenta \"npm run dev:hub\" \"npm run dev:backbone\" \"npm run dev:landing\"",
+    "dev:hub": "dotenv -o -e .env -- bash -c \"cd apps/hub && npm run dev\"",
+    "dev:backbone": "dotenv -o -e .env -- bash -c \"cd apps/backbone && npm run dev\"",
+    "dev:landing": "dotenv -o -e .env -- bash -c \"cd apps/landing && npm run dev -- --port $LANDING_PORT\"",
+    
+    "platform:up": "dotenv -o -e .env -- docker compose -f docker-compose.platform.yml -f docker-compose.platform.dev-ports.yml up -d",
+    "platform:down": "dotenv -o -e .env -- docker compose -f docker-compose.platform.yml -f docker-compose.platform.dev-ports.yml down",
+    "platform:ps": "dotenv -o -e .env -- docker compose -f docker-compose.platform.yml -f docker-compose.platform.dev-ports.yml ps",
+    "platform:logs": "dotenv -o -e .env -- docker compose -f docker-compose.platform.yml -f docker-compose.platform.dev-ports.yml logs -f",
+    
+    "docker:build": "dotenv -o -e .env -- docker compose build --no-cache",
+    "docker:up": "dotenv -o -e .env -- docker compose up -d",
+    "docker:down": "dotenv -o -e .env -- docker compose down",
+    "docker:ps": "dotenv -o -e .env -- docker compose ps",
+    "docker:logs": "dotenv -o -e .env -- docker compose logs -f",
+
+    "build:all": "npm run build:hub && npm run build:backbone && npm run build:landing",
+    "build:hub": "cd apps/hub && npm run build",
+    "build:backbone": "cd apps/backbone && npm run build",
+    "build:landing": "cd apps/landing && npm run build",
+    
+    "migrate": "npm run migrate:main && npm run migrate:seed",
+    "migrate:main": "dotenv -o -e .env -- node scripts/migrate.js",
+    "migrate:seed": "dotenv -o -e .env -- node scripts/migrate-seed.js",
+    "migrate:seed:demo": "dotenv -o -e .env -- node scripts/migrate-seed.js --demo",
+    "migrate:hotfix": "dotenv -o -e .env -- node scripts/migrate-hotfix.js",
+
+    "session:query": "dotenv -o -e .env -- node scripts/session-query.js",
+    "session:messages": "dotenv -o -e .env -- node scripts/session-messages.js",
+    "session:stats": "dotenv -o -e .env -- node scripts/session-stats.js",
+
+    "user:change-password": "dotenv -o -e .env -- node scripts/user-change-password.js"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "dotenv-cli": "^11.0.0",
+    "pg": "^8.13.1"
+  }
+}

@@ -1,0 +1,28 @@
+# ==============================================================================
+# Exportacao de portas da plataforma para desenvolvimento local
+# Usa PORT_PREFIX definido no .env (ex: 45 → 4500, 4510, 4511)
+# ==============================================================================
+
+name: ${PROJECT}-${ENVIRONMENT}
+
+services:
+  postgres:
+    ports:
+      - "${EXPORT_POSTGRES_PORT}:5432"
+
+  n8n:
+    ports:
+      - "${EXPORT_N8N_PORT}:5678"
+
+  # Caddy em dev: redireciona para apps rodando no host
+  caddy:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      # Sobrescreve hosts do .env para apontar pro host machine
+      PUBLIC_DOMAIN: ":80"
+      HUB_HOST: host.docker.internal
+      BACKBONE_HOST: host.docker.internal
+      LANDING_HOST: host.docker.internal
+    ports:
+      - "${EXPORT_CADDY_PORT}:80"

@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Run Configuration",
+  "description": "Configuração de um run da fábrica de software autônoma",
+  "type": "object",
+  "required": ["name", "project", "milestone", "harness", "location"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Identificador único do run"
+    },
+    "project": {
+      "type": "string",
+      "description": "Nome do projeto em projects/"
+    },
+    "milestone": {
+      "type": "string",
+      "description": "Milestone do projeto (pasta dentro de projects/{project}/)"
+    },
+    "milestone_path": {
+      "type": ["string", "null"],
+      "description": "Caminho para os docs do milestone (specs, PRPs, refs). Relativo ao location ou absoluto. Se ausente, usa projects/{project}/{milestone}/ na raiz da fábrica."
+    },
+    "scaffold": {
+      "type": ["string", "null"],
+      "description": "Scaffold a usar (null para projetos externos)"
+    },
+    "harness": {
+      "type": "string",
+      "enum": ["claude-code", "opencode"],
+      "description": "Agente de IA a usar"
+    },
+    "location": {
+      "type": "string",
+      "description": "Caminho da workspace (relativo ./workspaces/ ou absoluto)"
+    },
+    "params": {
+      "type": "object",
+      "properties": {
+        "max_iterations": {
+          "type": ["integer", "null"],
+          "description": "Limite de iterações do loop (null = ilimitado)"
+        },
+        "max_turns": {
+          "type": ["integer", "null"],
+          "description": "Limite de turns por sessão do agent (null = ilimitado)"
+        },
+        "model": {
+          "type": ["string", "null"],
+          "description": "Modelo do agent (null = default)"
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data de criação do run"
+    }
+  }
+}
