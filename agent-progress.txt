@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 01-new-concepts
 
 ## Current Status
-14/15 features passing. F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-012, F-013, F-014 implementadas.
+15/15 features passing. MILESTONE COMPLETO. Todas as features implementadas: F-001 a F-015.
 
 ## Planning Path
 D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
@@ -33,7 +33,7 @@ D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
 [x] F-012 — Webhooks e notificacoes (priority 12, deps: F-010)
 [x] F-013 — Thin wrappers — slash commands reescritos (priority 13, deps: F-005, F-008, F-009)
 [x] F-014 — Worktrees e sessoes — declaracao e estrutura (priority 14, deps: F-008, F-010)
-[ ] F-015 — Documentacao de integracao do modulo Runs (priority 15, deps: F-005..F-012)
+[x] F-015 — Documentacao de integracao do modulo Runs (priority 15, deps: F-005..F-012)
 
 ## Architecture Decisions
 - ES Modules (.mjs) em toda a stack — substitui bash scripts
@@ -67,3 +67,4 @@ Session 13 (Coding — F-011): Implementada F-011 — Resiliencia e gutter detec
 Session 14 (Coding — F-012): Implementada F-012 — Webhooks e notificacoes. Funcao notifyWebhooks(config, progressPath, event, data) adicionada ao agent-harness.mjs. Filtra notifications[] por evento ou wildcard '*', monta payload JSON com event/timestamp/project/data, envia HTTP POST com fetch nativo (Content-Type application/json), timeout 10s via AbortController, try/catch individual por webhook (fire-and-forget). Registra resultado no agent-progress.txt: [WEBHOOK] POST {url} → {status} ou ERRO. Integrada em 5 pontos: feature_done (passing), feature_skip (skipped), completed (todas ok), stopped (graceful stop nos 3 pontos), error (catch global). Autocontido mantido — apenas node: built-ins. 14/14 testes F-012 passing, 18/18 F-010 + 10/10 F-011 regressao ok. Proxima: F-013 (thin wrappers — slash commands reescritos).
 Session 15 (Coding — F-013): Implementada F-013 — Thin wrappers slash commands reescritos. Reescritos 5 slash commands em .claude/commands/run/ (create.md, setup.md, code.md, loop.md, status.md) como thin wrappers. create.md coleta params e invoca create-project.mjs. setup.md invoca init-workspace.mjs + spawna initializer via claude -p. code.md invoca agent-harness.mjs com MAX_FEATURES=1. loop.md invoca agent-harness.mjs sem limite. status.md invoca get-status.mjs (com slug) ou list-projects.mjs (sem slug). Nenhum command reimplementa logica — todos delegam para API MJS. Cada command tem 23-29 linhas. 31/31 testes passing (7 criterios x verificacoes). Proxima: F-014 (worktrees e sessoes — declaracao e estrutura).
 Session 16 (Coding — F-014): Verificada F-014 — Worktrees e sessoes, declaracao e estrutura. Todos os 5 criterios ja estavam implementados por features anteriores: (1) getDefaultSessionTemplate(1) retorna dirs:['worktree'] (F-004/artifacts.mjs), (2) agent-harness.mjs cria dirs do session_template (F-010 linhas 492-496), (3) init-workspace.mjs adiciona .sessions/ ao .gitignore (F-008 linha 142), (4) agent-harness.json gerado contem session_template com dirs acessivel pelo monitor, (5) nenhuma logica de git worktree — apenas mkdir placeholder. Criado teste com 7 verificacoes (estatica + integracao): 7/7 passing. Proxima: F-015 (documentacao de integracao do modulo Runs).
+Session 17 (Coding — F-015): Implementada F-015 — Documentacao de integracao do modulo Runs. Criado runs/.meta/README.md com todas as secoes requeridas: Visao Geral, Conceitos, Guia Rapido (6 operacoes CLI com exemplos completos e output esperado), Uso como SDK (5 funcoes com assinatura, parametros, retorno e exemplo), Formatos de Arquivo (project.json, agent-harness.json, features.json, agent-harness.state), Artefatos do Workspace (tabela 9 artefatos v1), Configuracao do Agente (tabela 6 campos), Webhooks (config, eventos, payload), Sessoes de Feature (estrutura .sessions/), Graceful Stop (.stop), Gutter Detection (retries, rotacao, skip, guardrails), Troubleshooting (6 problemas comuns). Worktrees/execucao paralela marcados como Futuro. pt-BR no texto, ingles no codigo. Interface externa apenas — sem implementacao interna. 9/9 testes passing. MILESTONE 01-new-concepts COMPLETO — 15/15 features passing.
