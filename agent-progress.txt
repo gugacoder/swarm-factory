@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 01-new-concepts
 
 ## Current Status
-12/15 features passing. F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-012 implementadas.
+13/15 features passing. F-001, F-002, F-003, F-004, F-005, F-006, F-007, F-008, F-009, F-010, F-011, F-012, F-013 implementadas.
 
 ## Planning Path
 D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
@@ -30,8 +30,8 @@ D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
 [x] F-009 — API get-status.mjs (priority 9, deps: F-001, F-006)
 [x] F-010 — Harness MJS — loop unificado (priority 10, deps: F-008)
 [x] F-011 — Resiliencia e gutter detection (priority 11, deps: F-010)
-[ ] F-012 — Webhooks e notificacoes (priority 12, deps: F-010)
-[ ] F-013 — Thin wrappers — slash commands reescritos (priority 13, deps: F-005, F-008, F-009)
+[x] F-012 — Webhooks e notificacoes (priority 12, deps: F-010)
+[x] F-013 — Thin wrappers — slash commands reescritos (priority 13, deps: F-005, F-008, F-009)
 [ ] F-014 — Worktrees e sessoes — declaracao e estrutura (priority 14, deps: F-008, F-010)
 [ ] F-015 — Documentacao de integracao do modulo Runs (priority 15, deps: F-005..F-012)
 
@@ -65,3 +65,4 @@ Session 11 (Coding — F-009): Implementada F-009 — get-status.mjs. Funcao get
 Session 12 (Coding — F-010): Implementada F-010 — agent-harness.mjs (loop unificado Ralph Wiggum em MJS). Script autocontido em runs/.meta/harnesses/claude-code/agent-harness.mjs. Le agent-harness.json, recarrega features.json a cada iteracao, gerencia PID (agent-harness.pid), escreve estado em agent-harness.state (JSON), seleciona feature elegivel (pending/failing, deps passing, menor priority), marca in_progress, cria session dir com worktree, registra started_at/finished_at, spawna claude com -p --verbose --output-format stream-json --allowedTools --max-turns, captura output em output.jsonl. Suporta env overrides: MAX_TURNS, MAX_ITERATIONS, MAX_FEATURES, MODEL. Graceful stop via .stop com check a cada segundo durante sleep. Exit reasons: completed, stopped, iteration_limit, feature_limit, deps_impossible. Computar blocked para features com deps nao satisfeitas. Apenas node: built-ins. 18/18 testes passing. Proxima: F-011 (resiliencia e gutter detection) ou F-013 (thin wrappers).
 Session 13 (Coding — F-011): Implementada F-011 — Resiliencia e gutter detection. Adicionado ao agent-harness.mjs: appendProgress (registra em agent-progress.txt), executeRollback (git stash push/git reset --hard/none conforme config agent.rollback, default stash), writeGuardrails (cria/atualiza agent-guardrails.md com licoes aprendidas factuais). Gutter detection: apos cada falha incrementa retries, registra [FALHA] no progress; ao atingir max_retries (default 5) executa rotacao de contexto + rollback + registra [ROTACAO] e [ROLLBACK]; ao atingir max_retries*2 (10) marca como skipped + registra [SKIP]. Feature skipped nao satisfaz dependencias (selectNextFeature ja filtra por passing). Imports adicionados: appendFile, execSync. Autocontido mantido. 10/10 testes F-011 passing, 18/18 testes F-010 passing (regressao ok). Proxima: F-012 (webhooks e notificacoes) ou F-013 (thin wrappers).
 Session 14 (Coding — F-012): Implementada F-012 — Webhooks e notificacoes. Funcao notifyWebhooks(config, progressPath, event, data) adicionada ao agent-harness.mjs. Filtra notifications[] por evento ou wildcard '*', monta payload JSON com event/timestamp/project/data, envia HTTP POST com fetch nativo (Content-Type application/json), timeout 10s via AbortController, try/catch individual por webhook (fire-and-forget). Registra resultado no agent-progress.txt: [WEBHOOK] POST {url} → {status} ou ERRO. Integrada em 5 pontos: feature_done (passing), feature_skip (skipped), completed (todas ok), stopped (graceful stop nos 3 pontos), error (catch global). Autocontido mantido — apenas node: built-ins. 14/14 testes F-012 passing, 18/18 F-010 + 10/10 F-011 regressao ok. Proxima: F-013 (thin wrappers — slash commands reescritos).
+Session 15 (Coding — F-013): Implementada F-013 — Thin wrappers slash commands reescritos. Reescritos 5 slash commands em .claude/commands/run/ (create.md, setup.md, code.md, loop.md, status.md) como thin wrappers. create.md coleta params e invoca create-project.mjs. setup.md invoca init-workspace.mjs + spawna initializer via claude -p. code.md invoca agent-harness.mjs com MAX_FEATURES=1. loop.md invoca agent-harness.mjs sem limite. status.md invoca get-status.mjs (com slug) ou list-projects.mjs (sem slug). Nenhum command reimplementa logica — todos delegam para API MJS. Cada command tem 23-29 linhas. 31/31 testes passing (7 criterios x verificacoes). Proxima: F-014 (worktrees e sessoes — declaracao e estrutura).
