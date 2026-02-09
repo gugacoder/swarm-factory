@@ -149,6 +149,48 @@ async function writeGuardrails(guardrailsPath, featureId, retries, action, resul
   }
 }
 
+// --- Webhooks e notificações ---
+async function notifyWebhooks(config, progressPath, event, data) {
+  const notifications = config.notifications;
+  if (!Array.isArray(notifications) || notifications.length === 0) return;
+
+  const matching = notifications.filter(n =>
+    Array.isArray(n.events) && (n.events.includes(event) || n.events.includes('*'))
+  );
+  if (matching.length === 0) return;
+
+  const payload = {
+    event,
+    timestamp: now(),
+    project: {
+      slug: config.slug || '',
+      name: config.name || '',
+    },
+    data,
+  };
+
+  const body = JSON.stringify(payload);
+
+  for (const webhook of matching) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10_000);
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const logLine = `[${now()}] [WEBHOOK] POST ${webhook.url} → ${response.status}`;
+      await appendProgress(progressPath, logLine);
+    } catch (err) {
+      const logLine = `[${now()}] [WEBHOOK] POST ${webhook.url} → ERRO: ${err.message}`;
+      await appendProgress(progressPath, logLine);
+    }
+  }
+}
+
 // --- State (observabilidade) ---
 async function writeState(statePath, data) {
   await writeJson(statePath, data);
@@ -349,6 +391,14 @@ async function main() {
     // 6c. Graceful stop check
     if (await fileExists(stopFile)) {
       console.log(`${YELLOW}Loop encerrado por .stop após iteração ${iteration - 1}.${NC}`);
+      await notifyWebhooks(config, progressPath, 'stopped', {
+        feature_id: null,
+        feature_title: null,
+        iteration: iteration - 1,
+        features_done: featuresDone,
+        features_total: total,
+        exit_reason: 'stopped',
+      });
       await writeState(statePath, makeState({
         status: 'exited',
         iteration: iteration - 1,
@@ -384,6 +434,14 @@ async function main() {
         console.log(`${GREEN}  Total: ${features.length} features${NC}`);
         console.log(`${GREEN}  Iterações: ${iteration - 1}${NC}`);
         console.log(`${GREEN}=======================================${NC}`);
+        await notifyWebhooks(config, progressPath, 'completed', {
+          feature_id: null,
+          feature_title: null,
+          iteration: iteration - 1,
+          features_done: featuresDone,
+          features_total: total,
+          exit_reason: 'completed',
+        });
         await writeState(statePath, makeState({
           status: 'exited',
           iteration: iteration - 1,
@@ -479,6 +537,14 @@ async function main() {
     if (updatedFeature && updatedFeature.status === 'passing') {
       featuresDone++;
       console.log(`${GREEN}Feature ${featureId} → passing${NC}`);
+      await notifyWebhooks(config, progressPath, 'feature_done', {
+        feature_id: featureId,
+        feature_title: updatedFeature.title || '',
+        iteration,
+        features_done: featuresDone,
+        features_total: total,
+        exit_reason: null,
+      });
     } else {
       // Gutter detection — PRP-009
       if (updatedFeature) {
@@ -495,6 +561,14 @@ async function main() {
           await appendProgress(progressPath, skipMsg);
           await writeGuardrails(guardrailsPath, featureId, retries, 'Skip após rotação de contexto', `Feature pulada após ${retries} tentativas`);
           console.log(`${RED}Feature ${featureId} → SKIPPED (${retries} falhas)${NC}`);
+          await notifyWebhooks(config, progressPath, 'feature_skip', {
+            feature_id: featureId,
+            feature_title: updatedFeature.title || '',
+            iteration,
+            features_done: featuresDone,
+            features_total: total,
+            exit_reason: null,
+          });
         }
         // Rotação de contexto: exatamente ao atingir max_retries (primeira vez)
         else if (retries === maxRetries) {
@@ -538,6 +612,14 @@ async function main() {
     // 6o. Verificar .stop após agente
     if (await fileExists(stopFile)) {
       console.log(`${YELLOW}Loop encerrado por .stop após feature ${featureId}.${NC}`);
+      await notifyWebhooks(config, progressPath, 'stopped', {
+        feature_id: featureId,
+        feature_title: next.title || '',
+        iteration,
+        features_done: featuresDone,
+        features_total: total,
+        exit_reason: 'stopped',
+      });
       await writeState(statePath, makeState({
         status: 'exited',
         iteration,
@@ -559,6 +641,14 @@ async function main() {
     for (let s = 0; s < sleepBetween; s++) {
       if (await fileExists(stopFile)) {
         console.log(`${YELLOW}Loop encerrado por .stop durante intervalo.${NC}`);
+        await notifyWebhooks(config, progressPath, 'stopped', {
+          feature_id: featureId,
+          feature_title: next.title || '',
+          iteration,
+          features_done: featuresDone,
+          features_total: total,
+          exit_reason: 'stopped',
+        });
         await writeState(statePath, makeState({
           status: 'exited',
           iteration,
@@ -580,8 +670,23 @@ async function main() {
 }
 
 // --- Entry point ---
-main().catch(err => {
+main().catch(async err => {
   console.error(`${RED}Erro fatal no loop: ${err.message}${NC}`);
   console.error(err.stack);
+  try {
+    const config = JSON.parse(await readFile(resolve('agent-harness.json'), 'utf8'));
+    const progressPath = config.artifacts?.progress || resolve('agent-progress.txt');
+    await notifyWebhooks(config, progressPath, 'error', {
+      feature_id: null,
+      feature_title: null,
+      iteration: 0,
+      features_done: 0,
+      features_total: 0,
+      exit_reason: 'error',
+      error_message: err.message,
+    });
+  } catch {
+    // Se não conseguir notificar, não impede o exit
+  }
   process.exit(1);
 });
