@@ -1,0 +1,131 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "project.schema.json",
+  "title": "Project JSON",
+  "description": "Manifesto do projeto — fonte da verdade para orquestração do Swarm Factory",
+  "type": "object",
+  "required": ["version", "slug", "name", "specs", "workspace", "agent", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Versão do schema — define quais artefatos existem"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Identificador machine-friendly"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Nome humano do projeto"
+    },
+    "description": {
+      "type": ["string", "null"],
+      "description": "Contexto sobre o projeto"
+    },
+    "specs": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caminho para specs/PRPs/refs (relativo ao workspace ou absoluto)"
+    },
+    "workspace": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caminho absoluto para o diretório de desenvolvimento"
+    },
+    "agent": {
+      "$ref": "#/definitions/AgentConfig"
+    },
+    "artifacts": {
+      "type": "object",
+      "additionalProperties": {
+        "oneOf": [
+          { "$ref": "#/definitions/Artifact" },
+          { "$ref": "#/definitions/SessionTemplate" }
+        ]
+      },
+      "description": "Record de artefatos declarados com tipo e path"
+    }
+  },
+  "definitions": {
+    "AgentConfig": {
+      "type": "object",
+      "required": ["harness"],
+      "additionalProperties": false,
+      "properties": {
+        "harness": {
+          "type": "string",
+          "enum": ["claude-code", "opencode", "codex"],
+          "description": "Agente a usar"
+        },
+        "model": {
+          "type": ["string", "null"],
+          "description": "Modelo do agente (null = default)"
+        },
+        "max_turns": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Turns por sessão (null = sem limite)"
+        },
+        "max_iterations": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Iterações totais do loop (null = sem limite)"
+        },
+        "max_features": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Features a completar (null = sem limite, 1 = manual)"
+        },
+        "max_retries": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 5,
+          "description": "Tentativas por feature antes de rotação/skip"
+        }
+      }
+    },
+    "Artifact": {
+      "type": "object",
+      "required": ["type", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["file", "dir"],
+          "description": "Tipo do artefato"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Caminho relativo ao workspace ou absoluto"
+        }
+      }
+    },
+    "SessionTemplate": {
+      "type": "object",
+      "required": ["pattern", "files"],
+      "additionalProperties": false,
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Padrão de path com {feature-id}"
+        },
+        "files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Nomes dos arquivos por sessão"
+        },
+        "dirs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Nomes dos diretórios por sessão"
+        }
+      }
+    }
+  }
+}

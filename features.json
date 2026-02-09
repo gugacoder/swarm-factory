@@ -3,11 +3,12 @@
     "id": "F-001",
     "title": "Schemas JSON e módulo de validação",
     "description": "Criar project.schema.json e features.schema.json em runs/.meta/schema/, e o módulo validate.mjs em runs/.meta/lib/ que exporta validateProject(), validateFeatures() e loadSchema(). Usar ajv como validador. Schemas conforme er.md — project.json com campos version, slug, name, description, specs, workspace, agent (AgentConfig), artifacts; features.json como array de features com id, title, description, status, priority, dependencies, retries, prp_ids.",
-    "status": "failing",
+    "status": "passing",
     "priority": 1,
     "dependencies": [],
     "retries": 0,
     "prp_ids": ["PRP-001"],
+    "completed_at": "2026-02-09T00:00:00Z",
     "tests": [
       "Arquivo runs/.meta/schema/project.schema.json existe e é JSON Schema válido",
       "Arquivo runs/.meta/schema/features.schema.json existe e é JSON Schema válido",

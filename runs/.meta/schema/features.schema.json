@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "features.schema.json",
+  "title": "Features JSON",
+  "description": "Tracking de features — array de features gerenciado pelo loop",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/Feature"
+  },
+  "definitions": {
+    "Feature": {
+      "type": "object",
+      "required": ["id", "title", "description", "status", "priority"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^F-\\d{3}$",
+          "description": "Identificador da feature (ex: F-001)"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Título descritivo"
+        },
+        "description": {
+          "type": "string",
+          "description": "Descrição detalhada / critérios"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "failing", "blocked", "skipped", "passing"],
+          "description": "Estado atual da feature"
+        },
+        "priority": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Prioridade (menor número = mais prioritário)"
+        },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "IDs de features que devem estar passing antes"
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0,
+          "description": "Contagem de tentativas (incrementada pelo loop)"
+        },
+        "prp_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "IDs dos PRPs de origem"
+        },
+        "tests": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Critérios de teste da feature"
+        },
+        "started_at": {
+          "type": ["string", "null"],
+          "description": "Timestamp de início"
+        },
+        "completed_at": {
+          "type": ["string", "null"],
+          "description": "Timestamp de conclusão"
+        }
+      }
+    }
+  }
+}
