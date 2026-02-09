@@ -25,11 +25,12 @@
     "id": "F-002",
     "title": "Biblioteca compartilhada — paths.mjs",
     "description": "Criar runs/.meta/lib/paths.mjs que exporta resolvePath(basePath, targetPath), resolveArtifacts(workspace, artifacts) e normalizeSlashes(path). resolvePath resolve paths relativos (./ ou ../) a partir do basePath e retorna absolutos direto. Deve funcionar em Windows e Linux usando node:path. Não verificar existência no filesystem.",
-    "status": "failing",
+    "status": "passing",
     "priority": 2,
     "dependencies": [],
     "retries": 0,
     "prp_ids": ["PRP-002"],
+    "completed_at": "2026-02-09T19:17:01Z",
     "tests": [
       "Arquivo runs/.meta/lib/paths.mjs existe e exporta resolvePath, resolveArtifacts, normalizeSlashes",
       "resolvePath('D:\\sources\\app', './features.json') retorna 'D:\\sources\\app\\features.json'",
