@@ -1,0 +1,17 @@
+# F-010 — Harness MJS — loop unificado (agent-harness.mjs)
+- [x] Arquivo runs/.meta/harnesses/claude-code/agent-harness.mjs existe e é executável com node
+- [x] Lê agent-harness.json do diretório corrente
+- [x] Lê e recarrega features.json a cada iteração
+- [x] Escreve PID em agent-harness.pid
+- [x] Escreve estado em agent-harness.state (JSON com status, iteration, feature_id, etc.)
+- [x] Seleciona feature elegível: status pending/failing, deps passing, ordenado por priority
+- [x] Marca feature como in_progress antes de spawnar agente
+- [x] Cria session dir em .sessions/{feature-id}/
+- [x] Registra started_at e finished_at na sessão
+- [x] Spawna claude com -p, --verbose, --output-format stream-json, --max-turns
+- [x] Captura output em output.jsonl na session dir
+- [x] Respeita MAX_FEATURES=1 (para após 1 feature)
+- [x] Respeita MAX_ITERATIONS (para após N iterações)
+- [x] Graceful stop via .stop file (aguarda feature atual)
+- [x] Exit reasons: completed, stopped, iteration_limit, feature_limit, deps_impossible
+- [x] É autocontido — sem imports externos, apenas node: built-ins
