@@ -65,11 +65,12 @@
     "id": "F-004",
     "title": "Biblioteca compartilhada — artifacts.mjs",
     "description": "Criar runs/.meta/lib/artifacts.mjs que exporta getDefaultArtifacts(version), getDefaultSessionTemplate(version), ensureArtifactDirs(workspace, artifacts) e readArtifact(workspace, artifacts, key). Artefatos padrão v1 conforme er.md: harness_config, harness_script, setup_script, features, progress, state, pid, sessions, current_milestone.",
-    "status": "failing",
+    "status": "passing",
     "priority": 4,
     "dependencies": [],
     "retries": 0,
     "prp_ids": ["PRP-002"],
+    "completed_at": "2026-02-09T21:00:00Z",
     "tests": [
       "Arquivo runs/.meta/lib/artifacts.mjs existe e exporta getDefaultArtifacts, getDefaultSessionTemplate, ensureArtifactDirs, readArtifact",
       "getDefaultArtifacts(1) retorna Record com todos os 9 artefatos da versão 1 conforme er.md",
