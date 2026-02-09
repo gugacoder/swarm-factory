@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 01-new-concepts
 
 ## Current Status
-5/15 features passing. F-001, F-002, F-003, F-004, F-005 implementadas.
+6/15 features passing. F-001, F-002, F-003, F-004, F-005, F-006 implementadas.
 
 ## Planning Path
 D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
@@ -24,7 +24,7 @@ D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
 [x] F-003 — Biblioteca compartilhada — discovery.mjs (priority 3, deps: nenhuma)
 [x] F-004 — Biblioteca compartilhada — artifacts.mjs (priority 4, deps: nenhuma)
 [x] F-005 — API create-project.mjs (priority 5, deps: F-001, F-002, F-004)
-[ ] F-006 — API load-project.mjs (priority 6, deps: F-001, F-002, F-003)
+[x] F-006 — API load-project.mjs (priority 6, deps: F-001, F-002, F-003)
 [ ] F-007 — API list-projects.mjs (priority 7, deps: F-003, F-006)
 [ ] F-008 — API init-workspace.mjs (priority 8, deps: F-004, F-006)
 [ ] F-009 — API get-status.mjs (priority 9, deps: F-001, F-006)
@@ -58,3 +58,4 @@ Session 4 (Coding — F-002): Implementada F-002 — paths.mjs. Funcoes resolveP
 Session 5 (Coding — F-003): Implementada F-003 — discovery.mjs. Funcoes discoverProjects (busca flat .json + structured project.json em subdirs, exclui .meta/ e workspaces/) e resolveProjectPath (resolve slug lendo JSON dos structured, comparando basename dos flat). Usa node:fs/promises e node:path. 7/7 testes passing. Proxima: F-004 (artifacts.mjs).
 Session 6 (Coding — F-004): Implementada F-004 — artifacts.mjs. Funcoes getDefaultArtifacts (9 artefatos v1 conforme er.md), getDefaultSessionTemplate (pattern + files + dirs com worktree), ensureArtifactDirs (cria dirs para artefatos tipo dir), readArtifact (le arquivo e retorna null se inexistente). Usa node:fs/promises e node:path. 6/6 testes passing. Proxima: F-005 (create-project.mjs) ou F-006 (load-project.mjs).
 Session 7 (Coding — F-005): Implementada F-005 — create-project.mjs. Funcao createProject(params) monta project.json v1 com artifacts padrao, valida contra schema, escreve em formato flat ou structured. CLI via node:util.parseArgs com --max-turns (dash) como alias. Importa validate.mjs, artifacts.mjs. Sem dependencias externas adicionais. 9/9 testes passing. Proxima: F-006 (load-project.mjs).
+Session 8 (Coding — F-006): Implementada F-006 — load-project.mjs. Funcao loadProject(pathOrOptions) aceita path direto (string) ou { slug, runsDir } (object). Le JSON, valida contra schema via validateProject, resolve specs e artifacts via resolvePath/resolveArtifacts, retorna objeto enriquecido com _source e _resolved. CLI via parseArgs com arg posicional ou --slug. Importa validate.mjs, paths.mjs, discovery.mjs. 8/8 testes passing. Proxima: F-007 (list-projects.mjs).
