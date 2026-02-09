@@ -13,9 +13,9 @@
 //   touch .stop
 // =============================================================================
 
-import { readFile, writeFile, mkdir, access, unlink, readdir } from 'node:fs/promises';
+import { readFile, writeFile, appendFile, mkdir, access, unlink, readdir } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 
 // --- Cores ---
@@ -107,6 +107,46 @@ function countByStatus(features) {
     counts[f.status] = (counts[f.status] || 0) + 1;
   }
   return counts;
+}
+
+// --- Resiliência e gutter detection ---
+async function appendProgress(progressPath, line) {
+  await appendFile(progressPath, line + '\n', 'utf8');
+}
+
+function executeRollback(mode, featureId) {
+  const ts = now();
+  if (mode === 'stash') {
+    const msg = `gutter-${featureId}-${ts.replace(/[:.]/g, '')}`;
+    try {
+      execSync(`git stash push -m "${msg}"`, { stdio: 'pipe' });
+      return `[ROLLBACK] git stash push -m "${msg}"`;
+    } catch {
+      return `[ROLLBACK] git stash falhou (nada para stash?)`;
+    }
+  } else if (mode === 'reset') {
+    try {
+      execSync('git reset --hard HEAD', { stdio: 'pipe' });
+      return '[ROLLBACK] git reset --hard HEAD executado';
+    } catch {
+      return '[ROLLBACK] git reset --hard HEAD falhou';
+    }
+  } else if (mode === 'none') {
+    return '[ROLLBACK] none — sem rollback configurado';
+  }
+  return '[ROLLBACK] modo desconhecido — sem rollback';
+}
+
+async function writeGuardrails(guardrailsPath, featureId, retries, action, result) {
+  const ts = now();
+  const entry = `\n## ${ts} — Feature ${featureId}\n\n- **Problema:** ${retries} falhas consecutivas na implementação\n- **Ação:** ${action}\n- **Resultado:** ${result}\n`;
+
+  if (await fileExists(guardrailsPath)) {
+    await appendFile(guardrailsPath, entry, 'utf8');
+  } else {
+    const header = '# Guardrails — Lições Aprendidas\n';
+    await writeFile(guardrailsPath, header + entry, 'utf8');
+  }
 }
 
 // --- State (observabilidade) ---
@@ -203,7 +243,13 @@ async function main() {
   const statePath = config.artifacts?.state || resolve('agent-harness.state');
   const pidPath = config.artifacts?.pid || resolve('agent-harness.pid');
   const sessionsDir = config.artifacts?.sessions || resolve('.sessions');
+  const progressPath = config.artifacts?.progress || resolve('agent-progress.txt');
+  const guardrailsPath = resolve('agent-guardrails.md');
   const stopFile = resolve('.stop');
+
+  // Resiliência
+  const maxRetries = config.agent?.max_retries || 5;
+  const rollbackMode = config.agent?.rollback || 'stash';
 
   // Env overrides
   const maxIterations = process.env.MAX_ITERATIONS
@@ -434,12 +480,45 @@ async function main() {
       featuresDone++;
       console.log(`${GREEN}Feature ${featureId} → passing${NC}`);
     } else {
-      // Incrementar retries (gutter detection será PRP-009)
+      // Gutter detection — PRP-009
       if (updatedFeature) {
         updatedFeature.retries = (updatedFeature.retries || 0) + 1;
-        await saveFeatures(featuresPath, features);
+        const retries = updatedFeature.retries;
+
+        console.log(`${RED}Feature ${featureId} → ${updatedFeature.status || 'unknown'} (retries: ${retries}/${maxRetries * 2})${NC}`);
+
+        // Skip: retries >= max_retries * 2
+        if (retries >= maxRetries * 2) {
+          updatedFeature.status = 'skipped';
+          await saveFeatures(featuresPath, features);
+          const skipMsg = `[${now()}] [SKIP] Feature ${featureId}: ${retries} falhas — feature pulada`;
+          await appendProgress(progressPath, skipMsg);
+          await writeGuardrails(guardrailsPath, featureId, retries, 'Skip após rotação de contexto', `Feature pulada após ${retries} tentativas`);
+          console.log(`${RED}Feature ${featureId} → SKIPPED (${retries} falhas)${NC}`);
+        }
+        // Rotação de contexto: exatamente ao atingir max_retries (primeira vez)
+        else if (retries === maxRetries) {
+          // Rotação: registrar + rollback + marcar como failing
+          updatedFeature.status = 'failing';
+          await saveFeatures(featuresPath, features);
+
+          const rotMsg = `[${now()}] [ROTAÇÃO] Feature ${featureId}: ${retries} falhas consecutivas — rotação de contexto`;
+          await appendProgress(progressPath, rotMsg);
+
+          const rollbackResult = executeRollback(rollbackMode, featureId);
+          await appendProgress(progressPath, `[${now()}] ${rollbackResult}`);
+
+          await writeGuardrails(guardrailsPath, featureId, retries, `Rotação de contexto + ${rollbackMode}`, 'Aguardando próxima tentativa com contexto limpo');
+          console.log(`${YELLOW}Feature ${featureId} → ROTAÇÃO DE CONTEXTO (${retries} falhas, rollback: ${rollbackMode})${NC}`);
+        }
+        // Falha normal: apenas incrementar e marcar como failing
+        else {
+          updatedFeature.status = 'failing';
+          await saveFeatures(featuresPath, features);
+          const failMsg = `[${now()}] [FALHA] Feature ${featureId}: tentativa ${retries}`;
+          await appendProgress(progressPath, failMsg);
+        }
       }
-      console.log(`${RED}Feature ${featureId} → ${updatedFeature?.status || 'unknown'} (retries: ${updatedFeature?.retries || 0})${NC}`);
     }
 
     // 6n. Atualizar state → between
