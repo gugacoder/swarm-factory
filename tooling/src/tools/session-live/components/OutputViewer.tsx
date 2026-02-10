@@ -35,21 +35,29 @@ function truncate(s: string, max: number): string {
 function summarizeToolInput(name: string, input: Record<string, any>): string {
   switch (name) {
     case 'Bash':
+    case 'bash':
       return truncate(String(input.command ?? ''), 120)
     case 'Edit':
     case 'Write':
     case 'Read':
-      return String(input.file_path ?? '')
+    case 'edit':
+    case 'write':
+    case 'read':
+      return String(input.file_path ?? input.path ?? '')
     case 'Glob':
+    case 'glob':
       return String(input.pattern ?? '')
     case 'Grep':
+    case 'grep':
       return truncate(String(input.pattern ?? ''), 120)
     case 'WebFetch':
+    case 'webfetch':
       return truncate(String(input.url ?? ''), 120)
     case 'Task':
+    case 'task':
       return truncate(String(input.description ?? ''), 120)
     default:
-      return name
+      return truncate(String(input.description ?? input.command ?? name), 120)
   }
 }
 
@@ -106,8 +114,57 @@ function groupEventsToDisplayItems(events: JsonlEvent[]): DisplayItem[] {
       })
     } else if (ev.type === 'legacy') {
       items.push({ kind: 'legacy', lines: ev.lines })
+    } else if (ev.type === 'thread.started') {
+      items.push({ kind: 'system' })
+    } else if (ev.type === 'item.completed') {
+      const item = (ev as any).item
+      if (item?.type === 'reasoning' && item.text) {
+        items.push({ kind: 'text', text: item.text })
+      } else if (item?.type === 'agent_message' && item.text) {
+        items.push({ kind: 'text', text: item.text })
+      } else if (item?.type === 'command_execution') {
+        items.push({
+          kind: 'tool_call',
+          name: 'Shell',
+          summary: truncate(item.command ?? '', 120),
+          result: item.aggregated_output,
+          is_error: item.status === 'failed',
+        })
+      } else if (item?.type === 'error') {
+        items.push({ kind: 'text', text: item.message ?? 'erro desconhecido' })
+      }
+    } else if (ev.type === 'turn.completed') {
+      const usage = (ev as any).usage
+      if (usage) {
+        items.push({ kind: 'result', turns: usage.input_tokens })
+      }
+    }
+    // OpenCode events
+    else if (ev.type === 'text' && (ev as any).part?.text) {
+      items.push({ kind: 'text', text: (ev as any).part.text })
+    } else if (ev.type === 'tool_use') {
+      const part = (ev as any).part
+      if (part?.state) {
+        const toolName = part.tool ?? 'tool'
+        const input = part.state.input ?? {}
+        const summary = summarizeToolInput(toolName, input)
+        const output = part.state.output ?? part.state.metadata?.output ?? undefined
+        const isError = part.state.status === 'failed' || (part.state.metadata?.exit != null && part.state.metadata.exit !== 0)
+        items.push({ kind: 'tool_call', name: toolName, summary, result: output, is_error: isError })
+      }
+    } else if (ev.type === 'step_finish') {
+      const part = (ev as any).part
+      if (part?.tokens) {
+        const tokens = part.tokens
+        items.push({
+          kind: 'result',
+          cost_usd: part.cost != null && part.cost > 0 ? part.cost : undefined,
+          turns: (tokens.input ?? 0) + (tokens.output ?? 0),
+        })
+      }
     }
     // 'user' events are consumed via toolResultMap, not rendered directly
+    // 'step_start' events are structural, not rendered
   }
 
   return items

@@ -18,9 +18,10 @@ interface RunDetailProps {
 type Tab = 'features' | 'progress' | 'sessions'
 
 function ToolLabel({ tool }: { tool: RunDetailType['tool'] }) {
-  const labels = {
+  const labels: Record<string, string> = {
     'claude-code': 'Claude Code',
     'opencode': 'OpenCode',
+    'codex': 'Codex',
     'unknown': 'Desconhecido',
   }
   return <span>{labels[tool]}</span>

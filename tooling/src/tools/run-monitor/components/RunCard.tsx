@@ -9,12 +9,14 @@ interface RunCardProps {
 }
 
 function ToolBadge({ tool }: { tool: RunSummary['tool'] }) {
-  const label = tool === 'claude-code' ? 'CC' : tool === 'opencode' ? 'OC' : '??'
+  const label = tool === 'claude-code' ? 'CC' : tool === 'opencode' ? 'OC' : tool === 'codex' ? 'CX' : '??'
   const color = tool === 'claude-code'
     ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
     : tool === 'opencode'
       ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-      : 'bg-gray-500/15 text-gray-600'
+      : tool === 'codex'
+        ? 'bg-teal-500/15 text-teal-600 dark:text-teal-400'
+        : 'bg-gray-500/15 text-gray-600'
 
   return (
     <span className={cn('text-[9px] font-bold px-1 py-0.5 rounded uppercase shrink-0', color)}>

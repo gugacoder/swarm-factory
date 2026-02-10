@@ -317,17 +317,37 @@ function extractMetricsFromFd(fd: number, fileSize: number, tailEvents: JsonlEve
     model: null,
   }
 
-  // Extract from last event in tail (result event)
+  // Extract from last event in tail (result event, Codex turn.completed, or OpenCode step_finish)
   if (tailEvents.length > 0) {
     const last = tailEvents[tailEvents.length - 1]
     if (last.type === 'result') {
       metrics.cost_usd = (last as any).cost_usd ?? null
       metrics.duration_ms = (last as any).duration_ms ?? null
       metrics.turns = (last as any).turns ?? null
+    } else if (last.type === 'turn.completed') {
+      const usage = (last as any).usage
+      if (usage) {
+        metrics.turns = (usage.input_tokens ?? 0) + (usage.output_tokens ?? 0)
+      }
+    } else if (last.type === 'step_finish') {
+      // OpenCode — aggregate tokens from all step_finish events in tail
+      let totalInput = 0, totalOutput = 0, totalCost = 0
+      for (const ev of tailEvents) {
+        if (ev.type === 'step_finish') {
+          const part = (ev as any).part
+          if (part?.tokens) {
+            totalInput += part.tokens.input ?? 0
+            totalOutput += part.tokens.output ?? 0
+          }
+          if (part?.cost != null) totalCost += part.cost
+        }
+      }
+      metrics.turns = totalInput + totalOutput
+      if (totalCost > 0) metrics.cost_usd = totalCost
     }
   }
 
-  // Read first 4KB for system event (model) — the first event may not be in tail
+  // Read first 4KB for system event (model), Codex thread.started, or OpenCode step_start
   const headSize = Math.min(4 * 1024, fileSize)
   const headBuf = Buffer.alloc(headSize)
   fs.readSync(fd, headBuf, 0, headSize, 0)
@@ -338,6 +358,18 @@ function extractMetricsFromFd(fd: number, fileSize: number, tailEvents: JsonlEve
       const first = JSON.parse(headLines[0])
       if (first.type === 'system') {
         metrics.model = first.model ?? null
+      } else if (first.type === 'thread.started') {
+        // Codex — try second line for model info, fallback to 'codex'
+        metrics.model = 'codex'
+        if (headLines.length > 1) {
+          try {
+            const second = JSON.parse(headLines[1])
+            if (second.model) metrics.model = second.model
+          } catch { /* skip */ }
+        }
+      } else if (first.type === 'step_start') {
+        // OpenCode — model info not in events, use harness label
+        metrics.model = 'opencode'
       }
     } catch { /* skip */ }
   }
@@ -414,6 +446,15 @@ function readJsonlTailWithMetrics(filePath: string, maxEvents: number): JsonlTai
         } catch { /* skip malformed */ }
       }
 
+      // Fallback: if file has content but no lines parsed as JSON, treat as legacy text
+      // This handles .jsonl files that contain raw terminal output (e.g. old opencode sessions)
+      if (events.length === 0 && resultLines.length > 0) {
+        // Strip ANSI escape codes for readability
+        const clean = resultLines.map(l => l.replace(/\x1b\[[0-9;]*m/g, ''))
+        events.push({ type: 'legacy' as const, lines: clean })
+        return { events, total_bytes: fileSize, total_events: -1, truncated, metrics: null }
+      }
+
       const metrics = extractMetricsFromFd(fd, fileSize, events)
 
       return { events, total_bytes: fileSize, total_events: totalEvents, truncated, metrics }
@@ -464,6 +505,13 @@ function readJsonlSinceByte(filePath: string, sinceByte: number): JsonlTailResul
         try {
           events.push(JSON.parse(line))
         } catch { /* skip malformed */ }
+      }
+
+      // Fallback: non-JSON content → legacy text
+      if (events.length === 0 && lines.length > 0) {
+        const clean = lines.map(l => l.replace(/\x1b\[[0-9;]*m/g, ''))
+        events.push({ type: 'legacy' as const, lines: clean })
+        return { events, total_bytes: fileSize, total_events: -1, truncated: false, metrics: null, append: true }
       }
 
       const totalEvents = countNewlines(fd, fileSize)
@@ -574,7 +622,7 @@ interface CachedRunSummary {
   milestone: string
   location: string
   is_external: boolean
-  tool: 'claude-code' | 'opencode'
+  tool: 'claude-code' | 'opencode' | 'codex'
   features: { total: number; passing: number; failing: number }
   loop_state: LoopState
   iteration: number | null
@@ -630,7 +678,7 @@ function computeRunSummary(config: RunConfig, workspacePath: string): CachedRunS
     milestone: config.milestone,
     location: config.location,
     is_external: !config.location.startsWith('./'),
-    tool: config.harness as 'claude-code' | 'opencode',
+    tool: config.harness as 'claude-code' | 'opencode' | 'codex',
     features: { total: features.length, passing, failing },
     loop_state: detectLoopState(workspacePath, features),
     iteration: loopState?.iteration ?? null,
@@ -679,7 +727,7 @@ function computeRunDetail(config: RunConfig, workspacePath: string, progressFull
     milestone: config.milestone,
     location: config.location,
     is_external: !config.location.startsWith('./'),
-    tool: config.harness as 'claude-code' | 'opencode',
+    tool: config.harness as 'claude-code' | 'opencode' | 'codex',
     features: { total: features.length, passing, failing },
     loop_state: detectLoopState(workspacePath, features),
     iteration: loopState?.iteration ?? null,
@@ -1045,22 +1093,9 @@ export function runMonitorPlugin(runsDir?: string): Plugin {
           : null
 
         try {
-          // ETag baseado em size+mtime para 304 Not Modified
-          let etag: string | null = null
-          try {
-            const st = fs.statSync(outputInfo.path)
-            etag = `"${st.size}-${st.mtimeMs}"`
-          } catch { /* no file */ }
-
-          if (etag) {
-            res.setHeader('ETag', etag)
-            const ifNoneMatch = req.headers['if-none-match']
-            if (ifNoneMatch === etag) {
-              res.statusCode = 304
-              res.end()
-              return
-            }
-          }
+          // Disable HTTP caching — since_byte provides efficient incremental reads,
+          // and ETag can serve stale responses when backend parsing logic changes
+          res.setHeader('Cache-Control', 'no-store')
 
           if (outputInfo.isJsonl) {
             let result: JsonlTailResult
