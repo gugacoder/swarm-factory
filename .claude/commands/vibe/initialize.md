@@ -57,7 +57,7 @@ Organize as novas features na ordem lógica de implementação:
 5. UI/UX refinements
 6. Testes e polish
 
-### 2.2 agent-progress.txt
+### 2.2 `agent-progress.txt` (EXATAMENTE este nome — NÃO use `claude-progress.txt`, `progress.txt` ou qualquer outro)
 Crie (ou atualize) o arquivo de progresso com:
 - Current Status (estado geral do projeto)
 - Planning Path (caminho para docs — extraído de agent-harness.json)
@@ -66,8 +66,8 @@ Crie (ou atualize) o arquivo de progresso com:
 - Architecture Decisions (extraídas das specs)
 - Session Notes: "Session N (Initializer): Harness criado/atualizado para onda {sessão}"
 
-### 2.3 agent-setup.sh
-Script de bootstrap que:
+### 2.3 `agent-setup.sh` (EXATAMENTE este nome — NÃO use `init.sh`, `setup.sh`, `bootstrap.sh` ou qualquer outro)
+Script de bootstrap em `./agent-setup.sh` que:
 - Detecta o gerenciador de pacotes (npm, pnpm, yarn, bun) e instala dependências
 - Sobe o ambiente Docker se houver docker-compose
 - Inicia dev server

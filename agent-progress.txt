@@ -1,0 +1,70 @@
+# Agent Progress — Swarm Factory / 01-new-concepts
+
+## Current Status
+15/15 features passing. MILESTONE COMPLETO. Todas as features implementadas: F-001 a F-015.
+
+## Planning Path
+D:\sources\_unowned\swarm-factory\milestones\01-new-concepts
+- 02-specs/: requirements.md, user-stories.md, design.md, er.md
+- 03-prps/: PRP-001 a PRP-013
+
+## Environment
+- Stack: Node.js (ES Modules .mjs), ajv (validacao), node: built-ins
+- Workspace: D:\sources\_unowned\swarm-factory\worktrees\01-new-concepts
+- Factory: D:\sources\_unowned\swarm-factory
+- Package manager: npm
+- Dev server: npm run tooling (dashboard)
+- Teste: validacao manual via node (sem framework de teste formal)
+- Commits: Conventional Commits pt-BR
+
+## Features
+
+[x] F-001 — Schemas JSON e modulo de validacao (priority 1, deps: nenhuma)
+[x] F-002 — Biblioteca compartilhada — paths.mjs (priority 2, deps: nenhuma)
+[x] F-003 — Biblioteca compartilhada — discovery.mjs (priority 3, deps: nenhuma)
+[x] F-004 — Biblioteca compartilhada — artifacts.mjs (priority 4, deps: nenhuma)
+[x] F-005 — API create-project.mjs (priority 5, deps: F-001, F-002, F-004)
+[x] F-006 — API load-project.mjs (priority 6, deps: F-001, F-002, F-003)
+[x] F-007 — API list-projects.mjs (priority 7, deps: F-003, F-006)
+[x] F-008 — API init-workspace.mjs (priority 8, deps: F-004, F-006)
+[x] F-009 — API get-status.mjs (priority 9, deps: F-001, F-006)
+[x] F-010 — Harness MJS — loop unificado (priority 10, deps: F-008)
+[x] F-011 — Resiliencia e gutter detection (priority 11, deps: F-010)
+[x] F-012 — Webhooks e notificacoes (priority 12, deps: F-010)
+[x] F-013 — Thin wrappers — slash commands reescritos (priority 13, deps: F-005, F-008, F-009)
+[x] F-014 — Worktrees e sessoes — declaracao e estrutura (priority 14, deps: F-008, F-010)
+[x] F-015 — Documentacao de integracao do modulo Runs (priority 15, deps: F-005..F-012)
+
+## Architecture Decisions
+- ES Modules (.mjs) em toda a stack — substitui bash scripts
+- API deterministica em runs/.meta/api/ — CLI + SDK importavel
+- project.json como formato unico de projeto (substitui run configs atuais)
+- Dois formatos de filesystem: flat (runs/{slug}.json) e structured (runs/{slug}/project.json)
+- agent-harness.mjs substitui agent-harness.sh como loop principal
+- Slash commands viram thin wrappers que delegam para API MJS
+- Validacao via ajv contra JSON Schemas
+- Unica dependencia externa: ajv — resto usa node: built-ins
+- Cross-platform: funciona em Windows sem Git Bash/MSYS2
+- Workspace autonomo apos inicializacao (independente do swarm-factory)
+- Loop unificado: max_features=1 substitui conceito de "sessao manual"
+- Gutter detection: max_retries falhas -> rotacao de contexto -> skip
+- Webhooks fire-and-forget com fetch nativo
+
+## Session Notes
+Session 1 (Initializer): Harness inicializado para onda 01-new-concepts — 15 features, todas failing.
+Session 2 (Initializer — revalidacao): Contexto reabsorvido (4 specs, 13 PRPs). Features.json validado — 15 features cobrindo todos os PRPs, dependencias corretas, testes especificos. Nenhuma alteracao necessaria.
+Session 3 (Coding — F-001): Implementada F-001 — Schemas JSON e modulo de validacao. Criados project.schema.json e features.schema.json (draft-07) em runs/.meta/schema/, validate.mjs em runs/.meta/lib/ com ajv. 9/9 testes passing. Proxima: F-002 (paths.mjs).
+Session 4 (Coding — F-002): Implementada F-002 — paths.mjs. Funcoes resolvePath, resolveArtifacts, normalizeSlashes usando node:path. Cross-platform (Windows/Linux). 7/7 testes passing. Proxima: F-003 (discovery.mjs).
+Session 5 (Coding — F-003): Implementada F-003 — discovery.mjs. Funcoes discoverProjects (busca flat .json + structured project.json em subdirs, exclui .meta/ e workspaces/) e resolveProjectPath (resolve slug lendo JSON dos structured, comparando basename dos flat). Usa node:fs/promises e node:path. 7/7 testes passing. Proxima: F-004 (artifacts.mjs).
+Session 6 (Coding — F-004): Implementada F-004 — artifacts.mjs. Funcoes getDefaultArtifacts (9 artefatos v1 conforme er.md), getDefaultSessionTemplate (pattern + files + dirs com worktree), ensureArtifactDirs (cria dirs para artefatos tipo dir), readArtifact (le arquivo e retorna null se inexistente). Usa node:fs/promises e node:path. 6/6 testes passing. Proxima: F-005 (create-project.mjs) ou F-006 (load-project.mjs).
+Session 7 (Coding — F-005): Implementada F-005 — create-project.mjs. Funcao createProject(params) monta project.json v1 com artifacts padrao, valida contra schema, escreve em formato flat ou structured. CLI via node:util.parseArgs com --max-turns (dash) como alias. Importa validate.mjs, artifacts.mjs. Sem dependencias externas adicionais. 9/9 testes passing. Proxima: F-006 (load-project.mjs).
+Session 8 (Coding — F-006): Implementada F-006 — load-project.mjs. Funcao loadProject(pathOrOptions) aceita path direto (string) ou { slug, runsDir } (object). Le JSON, valida contra schema via validateProject, resolve specs e artifacts via resolvePath/resolveArtifacts, retorna objeto enriquecido com _source e _resolved. CLI via parseArgs com arg posicional ou --slug. Importa validate.mjs, paths.mjs, discovery.mjs. 8/8 testes passing. Proxima: F-007 (list-projects.mjs).
+Session 9 (Coding — F-007): Implementada F-007 — list-projects.mjs. Funcao listProjects({ runsDir }) usa discoverProjects + loadProject para cada projeto encontrado. Retorna array de ProjectSummary com slug, name, workspace, harness, format, _source, _error. Projetos invalidos aparecem com _error (nao sao ignorados). CLI com --format table (tabela formatada) e --format json (JSON array). Usa --runs-dir para override. 6/6 testes passing. Proxima: F-008 (init-workspace.mjs).
+Session 10 (Coding — F-008): Implementada F-008 — init-workspace.mjs. Funcao initWorkspace(pathOrOptions) carrega projeto via loadProject, cria workspace, gera agent-harness.json com _version, paths resolvidos, session_template, notifications:[]. Copia agent-harness.mjs do template se existir (graceful skip se nao existir — F-010 criara). Copia commands do harness (.claude/commands/vibe/ para claude-code). Cria .sessions/, .current-milestone, .gitignore com .sessions/, agent-progress.txt vazio. Reinicializacao sobrescreve harness.json e commands mas preserva features.json e progress. CLI com path posicional ou --slug. 11/11 testes passing. Proxima: F-009 (get-status.mjs).
+Session 11 (Coding — F-009): Implementada F-009 — get-status.mjs. Funcao getStatus(pathOrOptions) carrega projeto via loadProject, verifica existencia do workspace, le features.json e valida contra schema, computa contagem por status (pending, in_progress, failing, blocked, skipped, passing), calcula progress como porcentagem arredondada. Verifica PID do loop cross-platform (tasklist no Windows, kill -0 no Unix). Le estado do loop (agent-harness.state) para iteration e started_at. States: not_initialized, initialized, idle, running. CLI com --format table (barra de progresso visual) e --format json. Importa loadProject, validateFeatures, readArtifact. Usa node:child_process.execSync e node:os.platform para PID check cross-platform. 10/10 testes passing. Proxima: F-010 (agent-harness.mjs — loop unificado).
+Session 12 (Coding — F-010): Implementada F-010 — agent-harness.mjs (loop unificado Ralph Wiggum em MJS). Script autocontido em runs/.meta/harnesses/claude-code/agent-harness.mjs. Le agent-harness.json, recarrega features.json a cada iteracao, gerencia PID (agent-harness.pid), escreve estado em agent-harness.state (JSON), seleciona feature elegivel (pending/failing, deps passing, menor priority), marca in_progress, cria session dir com worktree, registra started_at/finished_at, spawna claude com -p --verbose --output-format stream-json --allowedTools --max-turns, captura output em output.jsonl. Suporta env overrides: MAX_TURNS, MAX_ITERATIONS, MAX_FEATURES, MODEL. Graceful stop via .stop com check a cada segundo durante sleep. Exit reasons: completed, stopped, iteration_limit, feature_limit, deps_impossible. Computar blocked para features com deps nao satisfeitas. Apenas node: built-ins. 18/18 testes passing. Proxima: F-011 (resiliencia e gutter detection) ou F-013 (thin wrappers).
+Session 13 (Coding — F-011): Implementada F-011 — Resiliencia e gutter detection. Adicionado ao agent-harness.mjs: appendProgress (registra em agent-progress.txt), executeRollback (git stash push/git reset --hard/none conforme config agent.rollback, default stash), writeGuardrails (cria/atualiza agent-guardrails.md com licoes aprendidas factuais). Gutter detection: apos cada falha incrementa retries, registra [FALHA] no progress; ao atingir max_retries (default 5) executa rotacao de contexto + rollback + registra [ROTACAO] e [ROLLBACK]; ao atingir max_retries*2 (10) marca como skipped + registra [SKIP]. Feature skipped nao satisfaz dependencias (selectNextFeature ja filtra por passing). Imports adicionados: appendFile, execSync. Autocontido mantido. 10/10 testes F-011 passing, 18/18 testes F-010 passing (regressao ok). Proxima: F-012 (webhooks e notificacoes) ou F-013 (thin wrappers).
+Session 14 (Coding — F-012): Implementada F-012 — Webhooks e notificacoes. Funcao notifyWebhooks(config, progressPath, event, data) adicionada ao agent-harness.mjs. Filtra notifications[] por evento ou wildcard '*', monta payload JSON com event/timestamp/project/data, envia HTTP POST com fetch nativo (Content-Type application/json), timeout 10s via AbortController, try/catch individual por webhook (fire-and-forget). Registra resultado no agent-progress.txt: [WEBHOOK] POST {url} → {status} ou ERRO. Integrada em 5 pontos: feature_done (passing), feature_skip (skipped), completed (todas ok), stopped (graceful stop nos 3 pontos), error (catch global). Autocontido mantido — apenas node: built-ins. 14/14 testes F-012 passing, 18/18 F-010 + 10/10 F-011 regressao ok. Proxima: F-013 (thin wrappers — slash commands reescritos).
+Session 15 (Coding — F-013): Implementada F-013 — Thin wrappers slash commands reescritos. Reescritos 5 slash commands em .claude/commands/run/ (create.md, setup.md, code.md, loop.md, status.md) como thin wrappers. create.md coleta params e invoca create-project.mjs. setup.md invoca init-workspace.mjs + spawna initializer via claude -p. code.md invoca agent-harness.mjs com MAX_FEATURES=1. loop.md invoca agent-harness.mjs sem limite. status.md invoca get-status.mjs (com slug) ou list-projects.mjs (sem slug). Nenhum command reimplementa logica — todos delegam para API MJS. Cada command tem 23-29 linhas. 31/31 testes passing (7 criterios x verificacoes). Proxima: F-014 (worktrees e sessoes — declaracao e estrutura).
+Session 16 (Coding — F-014): Verificada F-014 — Worktrees e sessoes, declaracao e estrutura. Todos os 5 criterios ja estavam implementados por features anteriores: (1) getDefaultSessionTemplate(1) retorna dirs:['worktree'] (F-004/artifacts.mjs), (2) agent-harness.mjs cria dirs do session_template (F-010 linhas 492-496), (3) init-workspace.mjs adiciona .sessions/ ao .gitignore (F-008 linha 142), (4) agent-harness.json gerado contem session_template com dirs acessivel pelo monitor, (5) nenhuma logica de git worktree — apenas mkdir placeholder. Criado teste com 7 verificacoes (estatica + integracao): 7/7 passing. Proxima: F-015 (documentacao de integracao do modulo Runs).
+Session 17 (Coding — F-015): Implementada F-015 — Documentacao de integracao do modulo Runs. Criado runs/.meta/README.md com todas as secoes requeridas: Visao Geral, Conceitos, Guia Rapido (6 operacoes CLI com exemplos completos e output esperado), Uso como SDK (5 funcoes com assinatura, parametros, retorno e exemplo), Formatos de Arquivo (project.json, agent-harness.json, features.json, agent-harness.state), Artefatos do Workspace (tabela 9 artefatos v1), Configuracao do Agente (tabela 6 campos), Webhooks (config, eventos, payload), Sessoes de Feature (estrutura .sessions/), Graceful Stop (.stop), Gutter Detection (retries, rotacao, skip, guardrails), Troubleshooting (6 problemas comuns). Worktrees/execucao paralela marcados como Futuro. pt-BR no texto, ingles no codigo. Interface externa apenas — sem implementacao interna. 9/9 testes passing. MILESTONE 01-new-concepts COMPLETO — 15/15 features passing.

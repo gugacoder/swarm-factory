@@ -48,3 +48,6 @@ agent-harness.state
 # Worktrees (workspaces de runs)
 worktree/
 worktrees/
+
+# Sessions (estado local do workspace)
+.sessions

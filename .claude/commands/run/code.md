@@ -2,24 +2,22 @@ Execute UMA sessão do Coding Agent dentro de um run.
 
 ## Argumentos: $ARGUMENTS
 
-Se argumentos foram passados, use como `<run-name>`.
+## Instruções
 
-Se NÃO foram passados argumentos (vazio), use AskUserQuestion:
+1. Identifique o projeto (via $ARGUMENTS como path/slug, ou pergunte ao usuário)
+2. Obtenha o workspace via API:
+   ```
+   node runs/.meta/api/get-status.mjs --slug X --format json
+   ```
+3. Valide que `{workspace}/features.json` existe e mostre progresso atual
+4. Execute o harness MJS com limite de 1 feature:
+   ```
+   cd {workspace} && MAX_FEATURES=1 node agent-harness.mjs
+   ```
+5. Mostre o progresso atualizado após conclusão
 
-### Pergunta 1: Run
-- Liste os arquivos `*.json` em `runs/` (exceto os de `.meta/`)
-- Para cada run, leia o JSON e verifique se o location tem `features.json` (já inicializado)
-- Mostre na descrição o progresso: "X/Y features passing"
-- Header: "Run"
-- Question: "Qual run usar para coding?"
+## Notas
 
-## Execução
-
-1. Leia `runs/{run-name}.json` para obter a configuração do run
-2. Resolva o `location` (relativo a `runs/` se começa com `./`)
-3. Valide que `{location}/features.json` existe
-4. Mostre o status atual (passing/total)
-5. Execute uma sessão conforme o harness:
-   - **claude-code**: `cd {location} && claude -p "$(cat .claude/commands/vibe/code.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep" --max-turns 50`
-   - **opencode**: `cd {location} && opencode run --agent coder "Execute o protocolo de startup e implemente a próxima feature"`
-6. Mostre o progresso atualizado
+- Equivale a rodar o loop uma única vez (1 feature)
+- Toda a lógica está em `agent-harness.mjs` no workspace
+- Em caso de erro, mostre a mensagem ao usuário

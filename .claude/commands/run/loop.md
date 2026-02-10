@@ -2,38 +2,27 @@ Inicia o loop autônomo (Ralph Wiggum) dentro de um run.
 
 ## Argumentos: $ARGUMENTS
 
-Se argumentos foram passados, parse como: `<run-name> [max-iterations] [model]`
+## Instruções
 
-Se NÃO foram passados argumentos (vazio), use AskUserQuestion:
-
-### Pergunta 1: Run
-- Liste os arquivos `*.json` em `runs/` (exceto os de `.meta/`)
-- Para cada run, leia o JSON e verifique se o location tem `features.json`
-- Mostre na descrição o progresso: "X/Y features passing"
-- Header: "Run"
-- Question: "Qual run rodar no loop?"
-
-### Pergunta 2: Iterações
-- Header: "Iterações"
-- Question: "Limite máximo de iterações?"
-- Opções:
-  - "50" — descrição: "Conservador — bom para testar"
-  - "200" — descrição: "Padrão (Recomendado)"
-  - "500" — descrição: "Longo — projetos grandes"
-
-## Execução
-
-1. Leia `runs/{run-name}.json` para obter a configuração do run
-2. Resolva o `location` (relativo a `runs/` se começa com `./`)
-3. Valide que `{location}/features.json` existe
-4. Mostre resumo e peça confirmação antes de iniciar:
+1. Identifique o projeto (via $ARGUMENTS como path/slug, ou pergunte ao usuário)
+2. Obtenha o workspace via API:
    ```
-   Run:        {run-name}
-   Location:   {location}
+   node runs/.meta/api/get-status.mjs --slug X --format json
+   ```
+3. Valide que `{workspace}/features.json` existe e mostre resumo:
+   ```
+   Run:        {slug}
+   Workspace:  {workspace}
    Features:   X passing / Y total
-   Iterações:  {max}
-   Harness:    {harness}
-
-   Isso vai rodar autonomamente. Confirma?
    ```
-5. Execute: `cd {location} && MAX_ITERATIONS={max} bash agent-harness.sh`
+4. Execute o harness MJS sem limite de features:
+   ```
+   cd {workspace} && node agent-harness.mjs
+   ```
+   Opcionalmente com env overrides: `MAX_ITERATIONS=N MODEL=X node agent-harness.mjs`
+5. Informe: para graceful stop, crie `touch {workspace}/.stop`
+
+## Notas
+
+- Toda a lógica está em `agent-harness.mjs` no workspace
+- Em caso de erro, mostre a mensagem ao usuário

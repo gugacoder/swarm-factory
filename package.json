@@ -6,5 +6,8 @@
   ],
   "scripts": {
     "tooling": "npm run dev --workspace=tooling"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1"
   }
 }
