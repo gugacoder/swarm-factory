@@ -48,8 +48,10 @@ O loop roda **dentro do workspace**. O run config e lido pelos commands (`/vibe:
 
 ```
 <location>/                             ← workspace (pode ser path externo)
+├── ralph-wiggum-loop.sh        # Engine do loop (copiada da fabrica, sourced pelo wrapper)
+├── ralph-wiggum-loop.md        # Documentacao do loop (copiada da fabrica)
 ├── agent-harness.json          # Config resolvida pelo initializer
-├── agent-harness.sh            # Wrapper — source do ralph-wiggum-loop.sh
+├── agent-harness.sh            # Wrapper — source do ralph-wiggum-loop.sh local
 ├── agent-harness.pid           # PID do processo do loop (gravado no startup, gitignored)
 ├── agent-harness.state         # JSON — estado atual do loop (gitignored)
 ├── agent-setup.sh              # Bootstrap do ambiente
@@ -90,16 +92,16 @@ Criado pelo initializer, contem paths resolvidos para o coder agent nao precisar
 
 O `planning_path` e sempre absoluto. O coder le `agent-harness.json` no startup e sabe exatamente onde estao specs, PRPs e refs.
 
-### Infraestrutura compartilhada
+### Infraestrutura na fabrica (source of truth)
 
 ```
 runs/.meta/
-├── ralph-wiggum-loop.sh        # Engine do loop (sourced pelos wrappers)
-├── ralph-wiggum-loop.md        # Este documento
+├── ralph-wiggum-loop.sh        # Engine do loop (copiada para o workspace pelo setup)
+├── ralph-wiggum-loop.md        # Este documento (copiado para o workspace pelo setup)
 ├── run.schema.json             # Schema de validacao do run.json
 └── harnesses/                  # Templates por agente
     ├── claude-code/
-    │   ├── agent-harness.sh    # Wrapper (define run_agent, faz source da engine)
+    │   ├── agent-harness.sh    # Wrapper (define run_agent, faz source ./ralph-wiggum-loop.sh)
     │   └── templates/          # Prompts genericos do workspace
     │       ├── initialize.md   # Prompt do initializer (usa agent-harness.json)
     │       └── code.md         # Prompt do coder (usa agent-harness.json)
@@ -108,6 +110,8 @@ runs/.meta/
         ├── opencode.json
         └── AGENTS.md
 ```
+
+O `run:setup` copia `ralph-wiggum-loop.sh`, `ralph-wiggum-loop.md` e `agent-harness.sh` para o workspace, tornando-o autossuficiente. A fabrica e a source of truth — `run:setup` SEMPRE sobrescreve a engine e os templates.
 
 ---
 
@@ -352,6 +356,8 @@ Loop RODANDO (agent-harness.pid valido):
 | `features.json` | Sim | **Fonte de verdade** do progresso |
 | `agent-progress.txt` | Sim | Contexto acumulado pro agent |
 | `agent-harness.json` | Sim | Config resolvida (planning_path, factory) |
+| `ralph-wiggum-loop.sh` | Sobrescrito pelo setup | Engine do loop (copiada da fabrica) |
+| `ralph-wiggum-loop.md` | Sobrescrito pelo setup | Documentacao do loop |
 | `.sessions/` | Sim | Historico de todas as sessoes |
 | `agent-harness.pid` | Sobrescrito | PID do loop atual |
 | `agent-harness.state` | Sobrescrito | Estado do loop atual |

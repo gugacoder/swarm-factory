@@ -56,18 +56,32 @@ Use caminhos absolutos para `planning_path` e `factory` — o coder roda no `loc
 
 **Nota:** O arquivo anteriormente se chamava `.harness.json`. Agora é `agent-harness.json` na raiz do workspace.
 
-#### 3.3 Vibe commands para o destino (SEMPRE sobrescrever)
+#### 3.3 Arquivos específicos do harness (SEMPRE sobrescrever)
 
-Copie os templates de vibe commands para o destino — estes são os comandos standalone que o dev usa NO projeto.
-**SEMPRE sobrescreva** os arquivos existentes — a fábrica é a source of truth e versões antigas no destino causam bugs:
+Copie os arquivos específicos do harness para o destino — a fábrica é a source of truth e versões antigas no destino causam bugs.
+**SEMPRE sobrescreva** os arquivos existentes:
 
 - **claude-code**:
   - Copie `runs/.meta/harnesses/claude-code/templates/initialize.md` → `{location}/.claude/commands/vibe/initialize.md`
   - Copie `runs/.meta/harnesses/claude-code/templates/code.md` → `{location}/.claude/commands/vibe/code.md`
 
-#### 3.4 `agent-harness.sh` (se NÃO existir)
-- Se location é relativo (começa com `./`): copie de `runs/.meta/harnesses/{harness}/agent-harness.sh` para `{location}/agent-harness.sh` sem alterações
-- Se location é absoluto (projeto externo): gere `{location}/agent-harness.sh` baseado no template de `runs/.meta/harnesses/{harness}/agent-harness.sh`, mas substituindo a linha `source ../../.meta/ralph-wiggum-loop.sh` pelo caminho absoluto: `source "{factory_root}/runs/.meta/ralph-wiggum-loop.sh"` (onde `factory_root` é a raiz da fábrica)
+- **opencode**:
+  - Copie `runs/.meta/harnesses/opencode/opencode.json` → `{location}/opencode.json`
+  - Copie `runs/.meta/harnesses/opencode/AGENTS.md` → `{location}/AGENTS.md`
+  - Copie `runs/.meta/harnesses/opencode/agents/coder.md` → `{location}/.opencode/agents/coder.md`
+  - Copie `runs/.meta/harnesses/opencode/agents/initializer.md` → `{location}/.opencode/agents/initializer.md`
+
+#### 3.4 Ralph Wiggum Loop engine (SEMPRE sobrescrever)
+
+Copie os arquivos da engine do loop para o destino — o workspace precisa ser autossuficiente, sem depender da fábrica:
+
+- Copie `runs/.meta/ralph-wiggum-loop.sh` → `{location}/ralph-wiggum-loop.sh`
+- Copie `runs/.meta/ralph-wiggum-loop.md` → `{location}/ralph-wiggum-loop.md`
+
+#### 3.5 `agent-harness.sh` (se NÃO existir)
+
+Copie de `runs/.meta/harnesses/{harness}/agent-harness.sh` para `{location}/agent-harness.sh` sem alterações.
+O wrapper já referencia `source ./ralph-wiggum-loop.sh` (local, copiado no passo 3.4).
 
 ### Passo 4 — Executar initializer agent
 

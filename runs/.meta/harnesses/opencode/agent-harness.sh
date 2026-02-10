@@ -7,7 +7,7 @@ LOOP_NAME="Ralph Wiggum Loop — OpenCode"
 MAX_AGENT_TURNS=${MAX_STEPS:-0}
 MODEL=${MODEL:-"opencode/big-pickle"}
 
-OC_FLAGS="--agent coder"
+OC_FLAGS="--agent coder --format json"
 CODER_PROMPT="Execute o protocolo de startup: leia agent-progress.txt, features.json, git log. Rode agent-setup.sh. Implemente a próxima feature failing de maior prioridade cujas dependências estejam passing. Teste, commite, atualize os artefatos."
 
 run_agent() {
@@ -15,4 +15,4 @@ run_agent() {
     ${MODEL:+--model "$MODEL"} "${CODER_PROMPT}")
 }
 
-source ../../.meta/ralph-wiggum-loop.sh
+source ./ralph-wiggum-loop.sh

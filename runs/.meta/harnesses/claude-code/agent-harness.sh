@@ -16,4 +16,4 @@ run_agent() {
     < .claude/commands/vibe/code.md
 }
 
-source ../../.meta/ralph-wiggum-loop.sh
+source ./ralph-wiggum-loop.sh
