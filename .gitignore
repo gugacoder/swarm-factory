@@ -47,3 +47,4 @@ agent-harness.state
 
 # Worktrees (workspaces de runs)
 worktree/
+.sessions
