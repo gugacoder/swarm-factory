@@ -123,6 +123,10 @@ export async function initWorkspace(pathOrOptions) {
       src: join(HARNESSES_DIR, 'opencode'),
       dest: join(workspace, '.opencode', 'commands'),
     },
+    'codex': {
+      src: join(HARNESSES_DIR, 'codex', 'templates'),
+      dest: join(workspace, '.claude', 'commands', 'vibe'),
+    },
   };
 
   const commandsConfig = commandsMap[harness];

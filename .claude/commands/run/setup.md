@@ -14,10 +14,9 @@ Prepara a workspace de um run e executa o Initializer Agent.
    ```
    node runs/.meta/api/get-status.mjs --slug X --format json
    ```
-4. Execute o initializer no workspace:
-   ```
-   cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"
-   ```
+4. Execute o initializer no workspace conforme o harness:
+   - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
+   - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
 5. Reporte: quantas features criadas, primeira feature, próximos passos (`/run:loop` ou `/run:code`)
 
 ## Notas
