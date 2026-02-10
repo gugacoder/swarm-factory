@@ -16,4 +16,4 @@ run_agent() {
     < .claude/commands/vibe/code.md
 }
 
-source "D:/sources/_unowned/swarm-factory/runs/.meta/ralph-wiggum-loop.sh"
+source ./ralph-wiggum-loop.sh
