@@ -27,7 +27,7 @@
     },
     "harness": {
       "type": "string",
-      "enum": ["claude-code", "opencode"],
+      "enum": ["claude-code", "opencode", "codex"],
       "description": "Agente de IA a usar"
     },
     "location": {
