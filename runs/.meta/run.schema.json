@@ -21,6 +21,10 @@
       "type": ["string", "null"],
       "description": "Caminho para os docs do milestone (specs, PRPs, refs). Relativo ao location ou absoluto. Se ausente, usa projects/{project}/{milestone}/ na raiz da fábrica."
     },
+    "session_name": {
+      "type": ["string", "null"],
+      "description": "Nome da session dentro de .harness/ (V2). Se ausente, usa o milestone como session_name."
+    },
     "scaffold": {
       "type": ["string", "null"],
       "description": "Scaffold a usar (null para projetos externos)"

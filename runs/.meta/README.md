@@ -11,9 +11,10 @@ Toda a API é acessível como CLI (scripts Node.js) e como SDK (imports ES Modul
 | Conceito | Descrição |
 |----------|-----------|
 | **project.json** | Manifesto do projeto — declara slug, workspace, specs, agente e artefatos. Fonte da verdade. |
-| **Workspace** | Diretório de desenvolvimento onde o código vive. Contém `agent-harness.json`, `features.json`, e artefatos gerados. |
+| **Workspace** | Diretório de desenvolvimento onde o código vive. V2: artefatos em `.harness/`. V1: artefatos no root. |
 | **Features** | Unidades de trabalho rastreadas em `features.json`. Cada feature tem status, prioridade e dependências. |
-| **Sessão** | Uma execução do agente para implementar uma feature. Armazenada em `.sessions/{feature-id}/`. |
+| **Session** | Em V2, uma session = milestone dentro de `.harness/{session}/`. Permite múltiplos milestones no mesmo workspace. |
+| **Sessão de Feature** | Uma execução do agente para implementar uma feature. V2: `.harness/{session}/runs/`. V1: `.sessions/{feature-id}/`. |
 | **Harness** | Agente executor (`claude-code`, `opencode`, `codex`). Cada harness tem seu template de scripts e commands. |
 | **Loop** | O Ralph Wiggum Loop — seleciona a próxima feature elegível, spawna o agente, verifica resultado, repete. |
 
@@ -70,15 +71,32 @@ node runs/.meta/api/init-workspace.mjs --slug meu-app
 
 Após inicializar, execute o Initializer Agent para gerar `features.json` a partir dos PRPs.
 
+### Criar worktree isolado (V2)
+
+```bash
+node runs/.meta/api/create-worktree.mjs \
+  --target /home/user/meu-app \
+  --milestone 08-precificacao \
+  --harness claude-code
+
+# Cria:
+# 1. Git worktree em /home/user/meu-app-08-precificacao (branch milestone/08-precificacao)
+# 2. Run config em runs/meu-app-08-precificacao-cc.json
+# 3. Estrutura .harness/ no worktree
+```
+
 ### Executar uma feature
+
+**V2 (com .harness/):**
 
 ```bash
 cd /home/user/meu-app
-MAX_FEATURES=1 node agent-harness.mjs
+MAX_FEATURES=1 node .harness/scripts/loop.mjs
 
-# Saída (agent-harness.state):
+# Saída (.harness/{session}/loop.json):
 # {
 #   "status": "exited",
+#   "pid": 12345,
 #   "iteration": 1,
 #   "feature_id": "F-001",
 #   "features_done": 1,
@@ -86,18 +104,35 @@ MAX_FEATURES=1 node agent-harness.mjs
 # }
 ```
 
+**V1 (legacy):**
+
+```bash
+cd /home/user/meu-app
+MAX_FEATURES=1 node agent-harness.mjs
+```
+
 ### Executar loop contínuo
+
+**V2:**
+
+```bash
+cd /home/user/meu-app
+node .harness/scripts/loop.mjs                  # Session de .harness/active
+node .harness/scripts/loop.mjs 09-checklist     # Session explícita
+```
+
+**V1:**
 
 ```bash
 cd /home/user/meu-app
 node agent-harness.mjs
-
-# Loop executa até:
-# - Todas as features serem passing (exit_reason: "completed")
-# - Atingir MAX_ITERATIONS (exit_reason: "iteration_limit")
-# - Receber .stop (exit_reason: "stopped")
-# - Nenhuma feature elegível restante (exit_reason: "deps_impossible")
 ```
+
+Loop executa até:
+- Todas as features serem passing (`exit_reason: "completed"`)
+- Atingir MAX_ITERATIONS (`exit_reason: "iteration_limit"`)
+- Receber .stop (`exit_reason: "stopped"`)
+- Nenhuma feature elegível restante (`exit_reason: "deps_impossible"`)
 
 Para parar graciosamente (o loop termina a feature atual):
 
@@ -466,6 +501,68 @@ Estado runtime do loop. JSON. Atualizado a cada iteração.
 
 ## Artefatos do Workspace
 
+### V2 — Estrutura `.harness/` (multi-milestone)
+
+```
+workspace/
+├── .harness/                              # gitignored
+│   ├── scripts/
+│   │   ├── loop.mjs                       # ralph wiggum loop (shared)
+│   │   ├── run.mjs                        # spawna coder agent (per-harness)
+│   │   └── init.mjs                       # spawna initializer agent (per-harness)
+│   ├── prompt.md                          # prompt do coder agent
+│   ├── learnings.md                       # lições cross-milestone
+│   ├── active                             # string → "08-precificacao"
+│   └── {session}/                         # session = milestone
+│       ├── config.json                    # {slug, project, session_name, specs, agent}
+│       ├── features.json
+│       ├── progress.txt
+│       ├── loop.json                      # {status, pid, iteration, ...}
+│       └── runs/
+│           ├── F-001.jsonl                # output stream do agent
+│           ├── F-001.json                 # metadata da feature run
+│           └── ...
+├── agent-setup.sh                         # bootstrap do projeto (no root)
+├── .claude/commands/vibe/                 # slash commands standalone
+└── .stop                                  # graceful stop
+```
+
+#### config.json (per-session)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `slug` | string | Slug do run |
+| `project` | string | Nome do projeto |
+| `session_name` | string | Nome da session/milestone |
+| `specs` | string | Caminho para specs |
+| `agent` | object | Config do agente (harness, model, max_turns, etc.) |
+| `notifications` | array | Webhooks |
+
+#### loop.json (per-session)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `status` | string | `starting`, `running`, `between`, `exited` |
+| `pid` | number | PID do processo do loop |
+| `iteration` | number | Iteração atual |
+| `feature_id` | string | Feature em execução |
+| `features_done` | number | Features completadas |
+| `started_at` | string | Timestamp de início |
+| `exit_reason` | string | Motivo de saída |
+
+#### runs/F-xxx.json (metadata da feature run)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `feature_id` | string | ID da feature |
+| `started_at` | string | Timestamp de início |
+| `finished_at` | string | Timestamp de conclusão |
+| `agent_pid` | number | PID do processo do agente |
+| `exit_code` | number | Código de saída |
+| `retries` | number | Tentativas acumuladas |
+
+### V1 — Artefatos flat (legacy)
+
 Artefatos padrão da versão 1, gerados por `initWorkspace()`:
 
 | Chave | Tipo | Path Padrão | Descrição |
@@ -657,10 +754,18 @@ Verifique o array `notifications` em `agent-harness.json`. Webhooks são fire-an
 
 Se o loop foi interrompido durante a execução de uma feature, ela pode ficar com status `in_progress`. O loop trata `in_progress` como elegível na próxima execução — a feature será reselecionada automaticamente.
 
-### Worktrees / Execução paralela
+### Worktrees / Multi-milestone
 
-**Futuro.** Atualmente, o diretório `worktree/` nas sessões é apenas um placeholder. Execução paralela de features e git worktrees isolados são planejados para versões futuras.
+Com V2, múltiplos milestones podem coexistir no mesmo workspace (via `.harness/{session}/`). Para isolamento completo via git worktree:
+
+```bash
+node runs/.meta/api/create-worktree.mjs \
+  --target /path/to/repo \
+  --milestone 08-precificacao
+```
+
+Isso cria um worktree separado com branch `milestone/{milestone}` e estrutura `.harness/` independente.
 
 ---
 
-*Documentação do módulo Runs v2 — schema versão 1.*
+*Documentação do módulo Runs v3 — schema versão 1 (V1 legacy) e versão 2 (V2 .harness/).*

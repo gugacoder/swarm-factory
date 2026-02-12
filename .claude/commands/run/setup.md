@@ -5,22 +5,31 @@ Prepara a workspace de um run e executa o Initializer Agent.
 ## Instruções
 
 1. Identifique o projeto (via $ARGUMENTS como path/slug, ou pergunte ao usuário)
-2. Execute a API determinística:
+2. Se o projeto tem session_name/milestone definido, passe como `--session-name`:
    ```
-   node runs/.meta/api/init-workspace.mjs --slug X
+   node runs/.meta/api/init-workspace.mjs --slug X --session-name Y
    ```
+   Sem session_name: `node runs/.meta/api/init-workspace.mjs --slug X`
    Ou com path direto: `node runs/.meta/api/init-workspace.mjs <path>`
 3. Após sucesso, obtenha o workspace do projeto via:
    ```
    node runs/.meta/api/get-status.mjs --slug X --format json
    ```
-4. Execute o initializer no workspace conforme o harness:
+4. Execute o initializer no workspace conforme a versão detectada:
+
+   **V2 (tem .harness/):**
    - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
    - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
+
+   **V1 (legacy, sem .harness/):**
+   - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
+   - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
+
 5. Reporte: quantas features criadas, primeira feature, próximos passos (`/run:loop` ou `/run:code`)
 
 ## Notas
 
 - Toda a lógica de inicialização está em `runs/.meta/api/init-workspace.mjs`
 - O initializer (passo 4) é o LLM que gera `features.json` a partir dos PRPs
+- V2 cria estrutura `.harness/` com session isolada; V1 mantém artefatos no root
 - Em caso de erro, mostre a mensagem da API ao usuário

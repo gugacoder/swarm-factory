@@ -18,6 +18,24 @@ const ARTIFACTS_V1 = {
 };
 
 /**
+ * Artefatos V2 — estrutura .harness/ com sessions per-milestone.
+ * {session} é substituído pelo nome da session (ex: 08-precificacao).
+ */
+const ARTIFACTS_V2 = {
+  harness_dir:    { type: 'dir',  path: './.harness' },
+  scripts_dir:    { type: 'dir',  path: './.harness/scripts' },
+  prompt:         { type: 'file', path: './.harness/prompt.md' },
+  learnings:      { type: 'file', path: './.harness/learnings.md' },
+  active:         { type: 'file', path: './.harness/active' },
+  session_dir:    { type: 'dir',  path: './.harness/{session}' },
+  config:         { type: 'file', path: './.harness/{session}/config.json' },
+  features:       { type: 'file', path: './.harness/{session}/features.json' },
+  progress:       { type: 'file', path: './.harness/{session}/progress.txt' },
+  loop_state:     { type: 'file', path: './.harness/{session}/loop.json' },
+  runs_dir:       { type: 'dir',  path: './.harness/{session}/runs' },
+};
+
+/**
  * Session template padrão por versão.
  * Define a estrutura de cada sessão de feature.
  */
@@ -28,6 +46,15 @@ const SESSION_TEMPLATE_V1 = {
 };
 
 /**
+ * Session template V2 — feature runs dentro de .harness/{session}/runs/.
+ */
+const SESSION_TEMPLATE_V2 = {
+  pattern: './.harness/{session}/runs/{feature-id}',
+  files: ['{feature-id}.jsonl', '{feature-id}.json'],
+  dirs: []
+};
+
+/**
  * Retorna artefatos padrão para a versão especificada.
  * @param {number} version - versão do schema
  * @returns {Record<string, {type: string, path: string}>} artefatos padrão
@@ -35,6 +62,9 @@ const SESSION_TEMPLATE_V1 = {
 export function getDefaultArtifacts(version) {
   if (version === 1) {
     return structuredClone(ARTIFACTS_V1);
+  }
+  if (version === 2) {
+    return structuredClone(ARTIFACTS_V2);
   }
   throw new Error(`Versão de artefatos não suportada: ${version}`);
 }
@@ -48,7 +78,27 @@ export function getDefaultSessionTemplate(version) {
   if (version === 1) {
     return structuredClone(SESSION_TEMPLATE_V1);
   }
+  if (version === 2) {
+    return structuredClone(SESSION_TEMPLATE_V2);
+  }
   throw new Error(`Versão de session template não suportada: ${version}`);
+}
+
+/**
+ * Resolve placeholders em paths de artefatos V2.
+ * @param {Record<string, {type: string, path: string}>} artifacts - artefatos com placeholders
+ * @param {string} session - nome da session (ex: '08-precificacao')
+ * @returns {Record<string, {type: string, path: string}>} artefatos com paths resolvidos
+ */
+export function resolveSessionArtifacts(artifacts, session) {
+  const resolved = {};
+  for (const [key, artifact] of Object.entries(artifacts)) {
+    resolved[key] = {
+      ...artifact,
+      path: artifact.path.replace(/\{session\}/g, session),
+    };
+  }
+  return resolved;
 }
 
 /**

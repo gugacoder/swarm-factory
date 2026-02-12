@@ -1,6 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve, isAbsolute } from 'node:path';
+import { dirname, resolve, join, isAbsolute } from 'node:path';
 import { parseArgs } from 'node:util';
 import { execSync } from 'node:child_process';
 import { platform } from 'node:os';
@@ -51,6 +51,44 @@ function isPidRunning(pid) {
 }
 
 /**
+ * Tenta ler features e loop state da estrutura V2 (.harness/).
+ * @param {string} workspace
+ * @returns {Promise<{version: number, features: string|null, loopState: object|null, session: string|null}|null>}
+ */
+async function readV2Artifacts(workspace) {
+  const harnessDir = join(workspace, '.harness');
+  const activePath = join(harnessDir, 'active');
+
+  if (!await exists(activePath)) return null;
+
+  const session = (await readFile(activePath, 'utf8')).trim();
+  if (!session) return null;
+
+  const sessionDir = join(harnessDir, session);
+  if (!await exists(sessionDir)) return null;
+
+  // Ler features.json
+  let featuresContent = null;
+  const featuresPath = join(sessionDir, 'features.json');
+  if (await exists(featuresPath)) {
+    try {
+      featuresContent = await readFile(featuresPath, 'utf8');
+    } catch { /* ignore */ }
+  }
+
+  // Ler loop.json
+  let loopState = null;
+  const loopPath = join(sessionDir, 'loop.json');
+  if (await exists(loopPath)) {
+    try {
+      loopState = JSON.parse(await readFile(loopPath, 'utf8'));
+    } catch { /* ignore */ }
+  }
+
+  return { version: 2, features: featuresContent, loopState, session };
+}
+
+/**
  * Obtém o status completo de um projeto.
  *
  * @param {string|object} pathOrOptions - path direto para project.json ou { slug, runsDir }
@@ -75,14 +113,60 @@ export async function getStatus(pathOrOptions) {
     };
   }
 
-  // 3. Ler features.json do workspace
-  const featuresContent = await readArtifact(workspace, artifacts, 'features');
+  // 3. Tentar V2 primeiro, fallback para V1
+  const v2 = await readV2Artifacts(workspace);
+
+  let featuresContent;
+  let loopPid = null;
+  let loopActive = false;
+  let loopIteration = null;
+  let loopStartedAt = null;
+
+  if (v2) {
+    // V2 — ler de .harness/{session}/
+    featuresContent = v2.features;
+
+    if (v2.loopState) {
+      const pid = v2.loopState.pid;
+      if (pid && isPidRunning(pid)) {
+        loopActive = true;
+        loopPid = pid;
+      }
+      loopIteration = v2.loopState.iteration ?? null;
+      loopStartedAt = v2.loopState.started_at ?? null;
+    }
+  } else {
+    // V1 — ler do root
+    featuresContent = await readArtifact(workspace, artifacts, 'features');
+
+    // PID do loop
+    const pidContent = await readArtifact(workspace, artifacts, 'pid');
+    if (pidContent !== null) {
+      const parsed = parseInt(pidContent.trim(), 10);
+      if (!isNaN(parsed) && isPidRunning(parsed)) {
+        loopActive = true;
+        loopPid = parsed;
+      }
+    }
+
+    // Estado do loop
+    const stateContent = await readArtifact(workspace, artifacts, 'state');
+    if (stateContent !== null) {
+      try {
+        const stateData = JSON.parse(stateContent);
+        loopIteration = stateData.iteration ?? null;
+        loopStartedAt = stateData.started_at ?? null;
+      } catch { /* ignore */ }
+    }
+  }
+
   if (featuresContent === null) {
     return {
       slug: project.slug,
       name: project.name,
       workspace,
       state: 'initialized',
+      session: v2?.session || null,
       loop: { active: false, pid: null, iteration: null, started_at: null },
       features: { total: 0, pending: 0, in_progress: 0, failing: 0, blocked: 0, skipped: 0, passing: 0 },
       progress: 0,
@@ -112,33 +196,7 @@ export async function getStatus(pathOrOptions) {
   const total = featuresData.length;
   const progress = total > 0 ? Math.round((counts.passing / total) * 100) : 0;
 
-  // 6. Verificar PID do loop
-  let loopActive = false;
-  let loopPid = null;
-  const pidContent = await readArtifact(workspace, artifacts, 'pid');
-  if (pidContent !== null) {
-    const parsed = parseInt(pidContent.trim(), 10);
-    if (!isNaN(parsed) && isPidRunning(parsed)) {
-      loopActive = true;
-      loopPid = parsed;
-    }
-  }
-
-  // 7. Ler estado do loop (artefato state)
-  let loopIteration = null;
-  let loopStartedAt = null;
-  const stateContent = await readArtifact(workspace, artifacts, 'state');
-  if (stateContent !== null) {
-    try {
-      const stateData = JSON.parse(stateContent);
-      loopIteration = stateData.iteration ?? null;
-      loopStartedAt = stateData.started_at ?? null;
-    } catch {
-      // state file inválido — ignorar
-    }
-  }
-
-  // 8. Determinar state
+  // 6. Determinar state
   const state = loopActive ? 'running' : 'idle';
 
   return {
@@ -146,6 +204,7 @@ export async function getStatus(pathOrOptions) {
     name: project.name,
     workspace,
     state,
+    session: v2?.session || null,
     loop: {
       active: loopActive,
       pid: loopPid,
@@ -169,6 +228,9 @@ function formatTable(status) {
   const lines = [];
   lines.push(`Projeto: ${status.name} (${status.slug})`);
   lines.push(`Workspace: ${status.workspace}`);
+  if (status.session) {
+    lines.push(`Session: ${status.session}`);
+  }
 
   if (status.state === 'not_initialized') {
     lines.push(`Estado: not_initialized`);

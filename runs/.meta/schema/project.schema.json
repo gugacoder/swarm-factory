@@ -85,6 +85,12 @@
           "minimum": 1,
           "default": 5,
           "description": "Tentativas por feature antes de rotação/skip"
+        },
+        "rollback": {
+          "type": "string",
+          "enum": ["stash", "reset", "none"],
+          "default": "stash",
+          "description": "Modo de rollback na rotação de contexto"
         }
       }
     },

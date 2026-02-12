@@ -20,6 +20,7 @@ npm run tooling          # Dev server do dashboard (brand-editor, run-monitor, s
 /run:code <run>          # Despacha sessao manual (uma feature por vez)
 /run:loop <run>          # Despacha loop autonomo (Ralph Wiggum)
 /run:status [run]        # Status de um ou todos os runs
+/run:create-worktree     # Cria worktree + run + .harness/ num passo
 ```
 
 ### Vibe Commands — projeto destino (copiados pelo run:setup)
@@ -42,13 +43,22 @@ npm run tooling          # Dev server do dashboard (brand-editor, run-monitor, s
 /git-commit --one        # Commit unico com tudo
 ```
 
-### Loop direto no terminal
+### Loop direto no terminal (V2 — .harness/)
 ```bash
 cd <workspace>
-bash agent-harness.sh                           # Com defaults
-MAX_TURNS=50 bash agent-harness.sh              # Limitar turns por sessao
-MODEL=claude-sonnet-4-5-20250929 bash agent-harness.sh
-touch .stop                                               # Graceful stop (termina feature atual)
+node .harness/scripts/loop.mjs                  # Com defaults (session de .harness/active)
+node .harness/scripts/loop.mjs 08-precificacao  # Session explicita
+MAX_FEATURES=1 node .harness/scripts/loop.mjs   # Uma feature
+MAX_TURNS=50 node .harness/scripts/loop.mjs     # Limitar turns
+touch .stop                                     # Graceful stop (termina feature atual)
+```
+
+### Loop direto no terminal (V1 — legacy)
+```bash
+cd <workspace>
+node agent-harness.mjs                          # Com defaults
+MAX_TURNS=50 node agent-harness.mjs             # Limitar turns por sessao
+touch .stop                                     # Graceful stop (termina feature atual)
 ```
 
 ## Arquitetura
@@ -65,9 +75,12 @@ swarm-factory/
 │
 ├── runs/                        # CONFIGURACOES DE RUNS
 │   ├── .meta/
-│   │   ├── ralph-wiggum-loop.sh # Engine do loop autonomo (sourced, nao executar direto)
+│   │   ├── ralph-wiggum-loop.sh # Engine do loop autonomo V1 (legacy)
 │   │   ├── run.schema.json      # Schema de validacao de run configs
-│   │   └── harnesses/           # Configs por agente (claude-code/, opencode/)
+│   │   └── harnesses/           # Configs por agente
+│   │       ├── shared/          # loop.mjs (engine V2), prompt.md (coder prompt)
+│   │       ├── claude-code/     # run.mjs, init.mjs, templates/
+│   │       └── codex/           # run.mjs, init.mjs, templates/
 │   ├── *.json                   # Run configs
 │   └── workspaces/              # Workspaces de prototipacao
 │
@@ -75,7 +88,7 @@ swarm-factory/
 │   └── src/tools/               # brand-editor, run-monitor, session-live
 │
 └── .claude/commands/            # Slash commands
-    ├── run/                     # create, setup, code, loop, status (fabrica)
+    ├── run/                     # create, setup, code, loop, status, create-worktree (fabrica)
     ├── derive/                  # specs, prps
     └── git-commit.md
 ```
@@ -88,7 +101,28 @@ Conecta projeto + scaffold + harness. Dois modos:
 - **Incremento**: `location` absoluto, `scaffold: null` — adiciona features a codebase existente
 
 ### Workspace (gerado pelo run:setup + initializer)
-Contem `agent-harness.json` (elo entre fabrica e workspace com paths absolutos), `features.json` (tracking de features), `agent-progress.txt`, `agent-harness.sh`, `.sessions/` por feature, e `.claude/commands/vibe/` (commands standalone que funcionam sem a fabrica).
+
+**V2 (multi-milestone, .harness/):**
+```
+workspace/
+├── .harness/                    # gitignored
+│   ├── scripts/                 # loop.mjs, run.mjs, init.mjs
+│   ├── prompt.md                # prompt do coder agent
+│   ├── learnings.md             # licoes cross-milestone
+│   ├── active                   # string → "08-precificacao"
+│   └── {session}/               # session = milestone
+│       ├── config.json          # {slug, project, session_name, specs, agent}
+│       ├── features.json
+│       ├── progress.txt
+│       ├── loop.json            # {status, pid, iteration, ...}
+│       └── runs/                # F-001.jsonl, F-001.json, ...
+├── .claude/commands/vibe/       # slash commands standalone
+├── agent-setup.sh               # bootstrap do projeto
+└── .stop                        # graceful stop (verificado pelo loop)
+```
+
+**V1 (legacy, flat):**
+Contem `agent-harness.json`, `features.json`, `agent-progress.txt`, `agent-harness.mjs`, `.sessions/` por feature, e `.claude/commands/vibe/`.
 
 ### Features Pipeline
 `features.json` e um array de features com `id`, `status` (failing/passing), `priority`, `dependencies`. O loop seleciona a proxima feature elegivel (maior prioridade, deps satisfeitas), spawna o agent, que implementa + testa e marca como `passing`.
