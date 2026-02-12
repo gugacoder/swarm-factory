@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "slug": "agiliza-11-forma-pagamento-cc",
+  "name": "Agiliza — 11 Forma Pagamento",
+  "description": "Milestone 11-forma-pagamento do projeto Agiliza — cadastro de formas de pagamento via portal",
+  "specs": "D:/sources/codr.studio/agiliza/milestones/11-forma-pagamento",
+  "workspace": "D:/sources/codr.studio/agiliza/worktrees/11-forma-pagamento",
+  "agent": {
+    "harness": "claude-code",
+    "model": null,
+    "max_turns": null,
+    "max_iterations": null
+  },
+  "artifacts": {
+    "harness_config": { "type": "file", "path": "./agent-harness.json" },
+    "harness_script": { "type": "file", "path": "./agent-harness.mjs" },
+    "setup_script": { "type": "file", "path": "./agent-setup.mjs" },
+    "features": { "type": "file", "path": "./features.json" },
+    "progress": { "type": "file", "path": "./agent-progress.txt" },
+    "state": { "type": "file", "path": "./agent-harness.state" },
+    "pid": { "type": "file", "path": "./agent-harness.pid" },
+    "sessions": { "type": "dir", "path": "./.sessions" },
+    "current_milestone": { "type": "file", "path": "./.sessions/.current-milestone" }
+  }
+}
