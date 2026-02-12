@@ -1,8 +1,37 @@
 {
-  "run": "swarm-factory--cc",
-  "project": "swarm-factory",
-  "milestone": "01-new-concepts",
-  "planning_path": "D:\\sources\\_unowned\\swarm-factory\\milestones\\01-new-concepts",
-  "harness": "claude-code",
-  "factory": "D:\\sources\\_unowned\\swarm-factory"
+  "_version": 1,
+  "slug": "swarm-factory-02-app-e-kai-v1-cc",
+  "name": "swarm-factory — 02-app-e-kai-v1",
+  "specs": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1",
+  "workspace": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1",
+  "agent": {
+    "harness": "claude-code",
+    "max_turns": 50,
+    "max_retries": 5
+  },
+  "artifacts": {
+    "harness_config": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-harness.json",
+    "harness_script": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-harness.mjs",
+    "setup_script": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-setup.mjs",
+    "features": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\features.json",
+    "progress": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-progress.txt",
+    "state": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-harness.state",
+    "pid": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\agent-harness.pid",
+    "sessions": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\.sessions",
+    "current_milestone": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\.sessions\\.current-milestone"
+  },
+  "session_template": {
+    "pattern": "./.sessions/{feature-id}/",
+    "files": [
+      "checklist.md",
+      "output.jsonl",
+      "pid",
+      "started_at",
+      "finished_at"
+    ],
+    "dirs": [
+      "worktree"
+    ]
+  },
+  "notifications": []
 }

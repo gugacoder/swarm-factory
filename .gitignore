@@ -51,3 +51,4 @@ worktrees/
 
 # Sessions (estado local do workspace)
 .sessions
+.sessions/
