@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 02-app-e-kai-v1
 
 ## Current Status
-15/34 features passing (milestone 01 completo). 19 novas features failing para milestone 02-app-e-kai-v1 (E-Kai App).
+17/34 features passing. F-017 concluida. Proxima: F-018 (Backend auth — JWT + refresh token).
 
 ## Specs Path
 D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-app-e-kai-v1
@@ -15,7 +15,7 @@ D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-a
 - Package manager: npm (workspaces)
 - Dev server hub: npm run dev:hub (porta 9000)
 - Dev server backbone: npm run dev:backbone (porta 9090)
-- PostgreSQL: porta 9032 (docker-compose.dev.yml)
+- PostgreSQL: porta 9033 (docker-compose.dev.yml)
 - Teste: validacao manual + curl (sem framework formal)
 - Commits: Conventional Commits pt-BR
 
@@ -39,8 +39,8 @@ D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-a
 
 ## Features — Milestone 02-app-e-kai-v1 (E-Kai App)
 
-[ ] F-016 — Monorepo e infraestrutura base (priority 16, deps: nenhuma) [PRP-001]
-[ ] F-017 — Database migrations — schema completo (priority 17, deps: F-016) [PRP-002]
+[x] F-016 — Monorepo e infraestrutura base (priority 16, deps: nenhuma) [PRP-001]
+[x] F-017 — Database migrations — schema completo (priority 17, deps: F-016) [PRP-002]
 [ ] F-018 — Backend auth — JWT + refresh token (priority 18, deps: F-017) [PRP-003]
 [ ] F-019 — Backend API projetos — CRUD + workspace + loop (priority 19, deps: F-018) [PRP-004]
 [ ] F-020 — Backend SSE — eventos em tempo real (priority 20, deps: F-019) [PRP-005]
@@ -77,3 +77,5 @@ D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-a
 ## Session Notes
 Session 1-17 (Milestone 01-new-concepts): 15/15 features implementadas — SDK MJS completa.
 Session 18 (Initializer — Milestone 02-app-e-kai-v1): Harness atualizado para onda 02-app-e-kai-v1 — 19 novas features (F-016 a F-034), todas failing. App E-Kai: gestao PWA mobile-first com copilot agentico Kai.
+Session 19 (F-016 — Monorepo e infraestrutura base): Criada estrutura completa do monorepo e-Kai. apps/hub com React 19 + Vite + Tailwind 4 + shadcn/ui (tema Mira: Gray + Fuchsia) na porta 9000. apps/backbone com Hono + CORS + logger + health check na porta 9090. database/ com migrations dir e script migrate.js. docker-compose.dev.yml com PostgreSQL 16 na porta 9032. 20 componentes shadcn/ui base criados. npm workspaces configurado. Proxy Vite /api → backbone. lib/api.ts com fetch wrapper + refresh auto. Todos os testes da feature verificados.
+Session 20 (F-017 — Database migrations): 12 migrations SQL idempotentes criadas em database/migrations/. Schema completo: 4 enums, 10 tabelas, 9 indices custom, 4 triggers set_updated_at. Seed admin (admin@ekai.local/admin123, bcrypt cost 12, role admin). Scripts npm run migrate e npm run migrate:seed com dotenv-cli. PostgreSQL porta 9033 (porta 9032 ocupada por outro projeto). Idempotencia testada (rodar 2x sem erro). Hash bcrypt verificado via crypt().

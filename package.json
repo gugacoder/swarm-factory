@@ -1,13 +1,30 @@
 {
-  "name": "gestao-pessoas",
+  "name": "e-kai",
   "private": true,
   "workspaces": [
+    "apps/*",
+    "database",
     "tooling"
   ],
   "scripts": {
-    "tooling": "npm run dev --workspace=tooling"
+    "dev:all": "concurrently -n hub,backbone -c cyan,magenta \"npm run dev:hub\" \"npm run dev:backbone\"",
+    "dev:hub": "npm run dev --workspace=apps/hub",
+    "dev:backbone": "npm run dev --workspace=apps/backbone",
+    "build:all": "npm run build --workspace=apps/backbone && npm run build --workspace=apps/hub",
+    "platform:up": "docker compose -f docker-compose.dev.yml up -d",
+    "platform:down": "docker compose -f docker-compose.dev.yml down",
+    "migrate": "dotenv -- node scripts/migrate.js",
+    "migrate:seed": "dotenv -- node scripts/seed.js",
+    "tooling": "npm run dev --workspace=tooling",
+    "loop": "node agent-harness.mjs",
+    "code": "MAX_FEATURES=1 node agent-harness.mjs",
+    "status": "node runs/.meta/api/get-status.mjs runs/swarm-factory-02-app-e-kai-v1-cc.json"
   },
   "dependencies": {
     "ajv": "^8.17.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "dotenv-cli": "^8.0.0"
   }
 }

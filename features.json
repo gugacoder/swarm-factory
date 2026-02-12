@@ -7,7 +7,9 @@
     "priority": 1,
     "dependencies": [],
     "retries": 0,
-    "prp_ids": ["PRP-001"],
+    "prp_ids": [
+      "PRP-001"
+    ],
     "completed_at": "2026-02-09T00:00:00Z",
     "tests": [
       "Arquivo runs/.meta/schema/project.schema.json existe e é JSON Schema válido",
@@ -29,7 +31,9 @@
     "priority": 2,
     "dependencies": [],
     "retries": 0,
-    "prp_ids": ["PRP-002"],
+    "prp_ids": [
+      "PRP-002"
+    ],
     "completed_at": "2026-02-09T19:17:01Z",
     "tests": [
       "Arquivo runs/.meta/lib/paths.mjs existe e exporta resolvePath, resolveArtifacts, normalizeSlashes",
@@ -49,7 +53,9 @@
     "priority": 3,
     "dependencies": [],
     "retries": 0,
-    "prp_ids": ["PRP-002"],
+    "prp_ids": [
+      "PRP-002"
+    ],
     "completed_at": "2026-02-09T20:00:00Z",
     "tests": [
       "Arquivo runs/.meta/lib/discovery.mjs existe e exporta discoverProjects, resolveProjectPath",
@@ -69,7 +75,9 @@
     "priority": 4,
     "dependencies": [],
     "retries": 0,
-    "prp_ids": ["PRP-002"],
+    "prp_ids": [
+      "PRP-002"
+    ],
     "completed_at": "2026-02-09T21:00:00Z",
     "tests": [
       "Arquivo runs/.meta/lib/artifacts.mjs existe e exporta getDefaultArtifacts, getDefaultSessionTemplate, ensureArtifactDirs, readArtifact",
@@ -87,9 +95,15 @@
     "status": "passing",
     "completed_at": "2026-02-09T22:00:00Z",
     "priority": 5,
-    "dependencies": ["F-001", "F-002", "F-004"],
+    "dependencies": [
+      "F-001",
+      "F-002",
+      "F-004"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-003"],
+    "prp_ids": [
+      "PRP-003"
+    ],
     "tests": [
       "Arquivo runs/.meta/api/create-project.mjs existe e exporta createProject",
       "createProject({slug, name, workspace, specs, harness}) cria project.json válido",
@@ -109,9 +123,15 @@
     "status": "passing",
     "completed_at": "2026-02-09T23:00:00Z",
     "priority": 6,
-    "dependencies": ["F-001", "F-002", "F-003"],
+    "dependencies": [
+      "F-001",
+      "F-002",
+      "F-003"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-004"],
+    "prp_ids": [
+      "PRP-004"
+    ],
     "tests": [
       "Arquivo runs/.meta/api/load-project.mjs existe e exporta loadProject",
       "loadProject(path) lê, valida e retorna objeto com _source e _resolved",
@@ -130,9 +150,14 @@
     "status": "passing",
     "completed_at": "2026-02-09T23:30:00Z",
     "priority": 7,
-    "dependencies": ["F-003", "F-006"],
+    "dependencies": [
+      "F-003",
+      "F-006"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-005"],
+    "prp_ids": [
+      "PRP-005"
+    ],
     "tests": [
       "Arquivo runs/.meta/api/list-projects.mjs existe e exporta listProjects",
       "listProjects() retorna array de ProjectSummary com slug, name, workspace, harness, format",
@@ -149,9 +174,14 @@
     "status": "passing",
     "completed_at": "2026-02-09T23:45:00Z",
     "priority": 8,
-    "dependencies": ["F-004", "F-006"],
+    "dependencies": [
+      "F-004",
+      "F-006"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-006"],
+    "prp_ids": [
+      "PRP-006"
+    ],
     "tests": [
       "Arquivo runs/.meta/api/init-workspace.mjs existe e exporta initWorkspace",
       "Gera agent-harness.json no workspace com todos os paths resolvidos e _version:1",
@@ -172,9 +202,14 @@
     "status": "passing",
     "completed_at": "2026-02-09T12:00:00Z",
     "priority": 9,
-    "dependencies": ["F-001", "F-006"],
+    "dependencies": [
+      "F-001",
+      "F-006"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-007"],
+    "prp_ids": [
+      "PRP-007"
+    ],
     "tests": [
       "Arquivo runs/.meta/api/get-status.mjs existe e exporta getStatus",
       "Retorna state='not_initialized' quando workspace não existe",
@@ -194,9 +229,13 @@
     "status": "passing",
     "completed_at": "2026-02-09T14:00:00Z",
     "priority": 10,
-    "dependencies": ["F-008"],
+    "dependencies": [
+      "F-008"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-008"],
+    "prp_ids": [
+      "PRP-008"
+    ],
     "tests": [
       "Arquivo runs/.meta/harnesses/claude-code/agent-harness.mjs existe e é executável com node",
       "Lê agent-harness.json do diretório corrente",
@@ -223,9 +262,13 @@
     "status": "passing",
     "completed_at": "2026-02-09T15:00:00Z",
     "priority": 11,
-    "dependencies": ["F-010"],
+    "dependencies": [
+      "F-010"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-009"],
+    "prp_ids": [
+      "PRP-009"
+    ],
     "tests": [
       "retries é incrementado em features.json após cada falha",
       "Após max_retries falhas: rotação de contexto executada",
@@ -245,9 +288,13 @@
     "status": "passing",
     "completed_at": "2026-02-09T16:00:00Z",
     "priority": 12,
-    "dependencies": ["F-010"],
+    "dependencies": [
+      "F-010"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-010"],
+    "prp_ids": [
+      "PRP-010"
+    ],
     "tests": [
       "Função notifyWebhooks existe no agent-harness.mjs",
       "Filtra notifications cujos events incluem o evento ou '*'",
@@ -267,9 +314,15 @@
     "status": "passing",
     "completed_at": "2026-02-09T17:00:00Z",
     "priority": 13,
-    "dependencies": ["F-005", "F-008", "F-009"],
+    "dependencies": [
+      "F-005",
+      "F-008",
+      "F-009"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-011"],
+    "prp_ids": [
+      "PRP-011"
+    ],
     "tests": [
       "Arquivo .claude/commands/run/create.md reescrito como thin wrapper que invoca create-project.mjs",
       "Arquivo .claude/commands/run/setup.md reescrito: invoca init-workspace.mjs + /vibe:initialize",
@@ -287,9 +340,14 @@
     "status": "passing",
     "completed_at": "2026-02-09T18:30:00Z",
     "priority": 14,
-    "dependencies": ["F-008", "F-010"],
+    "dependencies": [
+      "F-008",
+      "F-010"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-012"],
+    "prp_ids": [
+      "PRP-012"
+    ],
     "tests": [
       "session_template em agent-harness.json contém 'worktree' em dirs",
       "Loop cria .sessions/{feature-id}/worktree/ como diretório vazio",
@@ -305,9 +363,20 @@
     "status": "passing",
     "completed_at": "2026-02-09T19:30:00Z",
     "priority": 15,
-    "dependencies": ["F-005", "F-006", "F-007", "F-008", "F-009", "F-010", "F-011", "F-012"],
+    "dependencies": [
+      "F-005",
+      "F-006",
+      "F-007",
+      "F-008",
+      "F-009",
+      "F-010",
+      "F-011",
+      "F-012"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-013"],
+    "prp_ids": [
+      "PRP-013"
+    ],
     "tests": [
       "Arquivo runs/.meta/README.md existe",
       "Contém seções: Visão Geral, Conceitos, Guia Rápido, Uso como SDK, Formatos de Arquivo",
@@ -324,11 +393,14 @@
     "id": "F-016",
     "title": "Monorepo e infraestrutura base (e-Kai)",
     "description": "Criar estrutura de monorepo e-Kai: apps/hub/ (React 19 + Vite + Tailwind 4 + shadcn/ui na porta 9000), apps/backbone/ (Hono + Node.js na porta 9090), database/ (migrations SQL), docker/ (docker-compose.dev.yml com PostgreSQL 16 na porta 9032). Configurar npm workspaces, TypeScript, ESLint, .env base. Script dev:all para subir todos os serviços. Gerar package.json raiz do app e de cada subprojeto. Configurar Tailwind 4 com tema Mira e shadcn/ui. Configurar Hono com CORS, logger, health check. NÃO implementar auth, rotas ou páginas — apenas a estrutura funcional vazia.",
-    "status": "failing",
+    "status": "passing",
+    "completed_at": "2026-02-12T03:10:00Z",
     "priority": 16,
     "dependencies": [],
     "retries": 0,
-    "prp_ids": ["PRP-001"],
+    "prp_ids": [
+      "PRP-001"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-001-monorepo-e-infra.md",
     "tests": [
       "Diretório apps/hub/ existe com package.json configurado (React 19, Vite, Tailwind 4)",
@@ -350,11 +422,16 @@
     "id": "F-017",
     "title": "Database migrations — schema completo",
     "description": "Criar migrations SQL idempotentes em database/migrations/ com todo o schema do e-Kai conforme er.md: enums (user_role, message_role, tool_call_status, notification_type), tabelas (users, refresh_tokens, kai_conversations, kai_messages, kai_tool_calls, kai_executions, notifications, notification_preferences, system_settings, onboarding_progress), índices, triggers de updated_at, e seed de usuário admin. Script migrate.sh que executa todas as migrations em ordem.",
-    "status": "failing",
+    "status": "passing",
+    "completed_at": "2026-02-12T12:00:00Z",
     "priority": 17,
-    "dependencies": ["F-016"],
+    "dependencies": [
+      "F-016"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-002"],
+    "prp_ids": [
+      "PRP-002"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-002-database-migrations.md",
     "tests": [
       "Migration 001 cria enums: user_role ('operador','admin'), message_role ('user','assistant','system'), tool_call_status ('success','error','timeout'), notification_type (6 valores)",
@@ -375,11 +452,15 @@
     "id": "F-018",
     "title": "Backend auth — JWT + refresh token",
     "description": "Implementar autenticação completa no backbone: auth-service.ts (bcrypt hash/verify, JWT sign/verify com jose, refresh token com jti), middleware auth.ts (extrair Bearer token, verificar, injetar userId no context), rotas auth.ts: POST /api/auth/login (email+senha → access token + refresh cookie httpOnly), POST /api/auth/refresh (cookie → novo access token), POST /api/auth/logout (revogar refresh), GET /api/auth/me (dados do usuário). Rate limiting 5/min em auth. Access token 15min, refresh token 7 dias.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 18,
-    "dependencies": ["F-017"],
+    "dependencies": [
+      "F-017"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-003"],
+    "prp_ids": [
+      "PRP-003"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-003-backend-auth.md",
     "tests": [
       "POST /api/auth/login com credenciais válidas retorna { accessToken, user: { id, email, name, role } }",
@@ -400,11 +481,15 @@
     "id": "F-019",
     "title": "Backend API projetos — CRUD + workspace + loop",
     "description": "Implementar rotas REST para projetos no backbone: project-service.ts (usa SDK MJS existente: loadProject, listProjects, createProject, getStatus, initWorkspace), watcher-service.ts (chokidar watch em runsDir para detectar mudanças em features.json). Rotas: GET /api/projects (lista), POST /api/projects (criar), GET /api/projects/:slug (detalhe + status), PATCH /api/projects/:slug (editar params), DELETE /api/projects/:slug (excluir config), POST /api/projects/:slug/init (inicializar workspace), POST /api/projects/:slug/loop/start (iniciar loop), POST /api/projects/:slug/loop/stop (parar loop), GET /api/projects/:slug/features (features.json), GET /api/projects/:slug/sessions (listar sessões), GET /api/projects/:slug/progress (agent-progress.txt).",
-    "status": "failing",
+    "status": "blocked",
     "priority": 19,
-    "dependencies": ["F-018"],
+    "dependencies": [
+      "F-018"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-004"],
+    "prp_ids": [
+      "PRP-004"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-004-backend-api-projetos.md",
     "tests": [
       "GET /api/projects retorna lista de projetos com slug, name, harness, state, progress",
@@ -427,11 +512,15 @@
     "id": "F-020",
     "title": "Backend SSE — eventos em tempo real",
     "description": "Implementar endpoint SSE GET /api/events no backbone com event emitter centralizado. watcher-service.ts usa chokidar para observar mudanças em features.json e agent-harness.state de projetos ativos, emitindo eventos tipados (feature:status, loop:start, loop:stop, loop:progress, project:created). Debounce de 500ms para file changes. Reconexão com Last-Event-ID. Cada evento tem id incremental, type e data JSON.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 20,
-    "dependencies": ["F-019"],
+    "dependencies": [
+      "F-019"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-005"],
+    "prp_ids": [
+      "PRP-005"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-005-backend-sse-realtime.md",
     "tests": [
       "GET /api/events retorna response com Content-Type: text/event-stream",
@@ -450,11 +539,15 @@
     "id": "F-021",
     "title": "Backend Kai agent — LangGraph com 12 tools",
     "description": "Implementar agente Kai no backbone usando LangGraph.js: graph com nodes classify→reason→act→respond, 12 tools (list_projects, get_status, create_project, init_workspace, start_loop, stop_loop, read_features, read_session, read_progress, read_logs, adjust_params, rotate_context), config OpenRouter (Gemini Flash para classify/reason, Claude Haiku para respond), prompts em pt-BR. Rota POST /api/kai/chat com streaming SSE (tokens parciais + tool calls visíveis). Persistência em kai_conversations, kai_messages, kai_tool_calls, kai_executions. GET /api/kai/conversations e GET /api/kai/conversations/:id/messages.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 21,
-    "dependencies": ["F-019"],
+    "dependencies": [
+      "F-019"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-006"],
+    "prp_ids": [
+      "PRP-006"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-006-backend-kai-agent.md",
     "tests": [
       "POST /api/kai/chat com { message: 'oi' } retorna streaming SSE com resposta de saudação",
@@ -475,11 +568,16 @@
     "id": "F-022",
     "title": "Frontend shell — layout, sidebar, bottom nav e routing",
     "description": "Implementar app shell mobile-first no hub: app-shell.tsx (container com sidebar desktop md+ ou bottom nav mobile <md), sidebar.tsx (colapsável, 4 itens: Dashboard/Projetos/Kai/Config, avatar+logout no footer, 240px expandida/64px colapsada, estado em localStorage), bottom-nav.tsx (fixed bottom, 4 itens, touch 44x44px), breadcrumb-bar.tsx (gerado da rota atual). React Router com rotas protegidas (ProtectedRoute), páginas placeholder. Dark mode com class strategy + toggle + localStorage.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 22,
-    "dependencies": ["F-016", "F-018"],
+    "dependencies": [
+      "F-016",
+      "F-018"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-007"],
+    "prp_ids": [
+      "PRP-007"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-007-frontend-shell-e-auth.md",
     "tests": [
       "Página /login renderiza formulário centralizado (email + senha) sem shell",
@@ -500,11 +598,15 @@
     "id": "F-023",
     "title": "Frontend auth — módulo de autenticação",
     "description": "Implementar lib/auth.ts no hub: armazenar access token em memória (variável de módulo), login(email,password) → POST /api/auth/login, refresh() → POST /api/auth/refresh (cookie automático), logout() → POST /api/auth/logout, getUser() → GET /api/auth/me, getAccessToken(). Implementar lib/api.ts: fetch wrapper com Authorization Bearer header, interceptor 401 → refresh → falha → /login. Métodos: get, post, patch, del.",
-    "status": "failing",
+    "status": "in_progress",
     "priority": 23,
-    "dependencies": ["F-016"],
+    "dependencies": [
+      "F-016"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-007"],
+    "prp_ids": [
+      "PRP-007"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-007-frontend-shell-e-auth.md",
     "tests": [
       "lib/auth.ts exporta login, refresh, logout, getUser, getAccessToken",
@@ -523,11 +625,18 @@
     "id": "F-024",
     "title": "Frontend dashboard e lista de projetos",
     "description": "Implementar dashboard.tsx com KPI cards (total projetos, total features, features passing, taxa sucesso), grid de project cards (nome, slug, harness, barra progresso, badge estado), cards clicáveis → /projects/:slug, empty state com CTA. Implementar projects/list.tsx com tabela (slug, nome, harness, workspace, estado, progresso), filtro por harness, busca por nome/slug. Implementar hook useSSE(url) com reconexão exponencial e useProjects() com cache + SSE updates.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 24,
-    "dependencies": ["F-022", "F-023", "F-019", "F-020"],
+    "dependencies": [
+      "F-022",
+      "F-023",
+      "F-019",
+      "F-020"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-008"],
+    "prp_ids": [
+      "PRP-008"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-008-frontend-dashboard-e-projetos.md",
     "tests": [
       "Dashboard exibe 4 KPI cards com dados reais da API",
@@ -547,11 +656,17 @@
     "id": "F-025",
     "title": "Frontend criar projeto",
     "description": "Implementar projects/create.tsx com formulário react-hook-form + Zod: campos slug (kebab-case), nome, workspace (path absoluto), specs (path), harness (select: claude-code/opencode/codex), scaffold (select: postgres-n8n/null). Seção 'Parametros Avançados' colapsável: model, max_turns (default 50), max_iterations, max_features, max_retries (default 5). Validação inline, toast de sucesso, redirect para detalhe.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 25,
-    "dependencies": ["F-022", "F-023", "F-019"],
+    "dependencies": [
+      "F-022",
+      "F-023",
+      "F-019"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-008"],
+    "prp_ids": [
+      "PRP-008"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-008-frontend-dashboard-e-projetos.md",
     "tests": [
       "Formulário renderiza todos os campos obrigatórios (slug, nome, workspace, specs, harness)",
@@ -570,11 +685,15 @@
     "id": "F-026",
     "title": "Frontend detalhe do projeto — visão geral e controles",
     "description": "Implementar projects/[slug]/detail.tsx com: header (nome, badge estado, botões ação), 4 tabs (Visão Geral, Features, Sessões, Logs). Tab Visão Geral: card info projeto, card status loop (PID, iteração, hora), botões condicionais (Inicializar/Iniciar Loop/Parar/Despachar Sessão conforme estado), card progresso (barra + contagem por status), botão Editar Parametros (dialog/drawer), botão Excluir (AlertDialog confirmação com digitar slug). Botão Iniciar Loop abre dialog para MAX_TURNS e MODEL.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 26,
-    "dependencies": ["F-024"],
+    "dependencies": [
+      "F-024"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-008"],
+    "prp_ids": [
+      "PRP-008"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-008-frontend-dashboard-e-projetos.md",
     "tests": [
       "Header exibe nome do projeto e badge de estado (not_initialized/initialized/idle/running)",
@@ -595,11 +714,16 @@
     "id": "F-027",
     "title": "Frontend features — tabela, filtros e gráfico",
     "description": "Implementar tab Features na página de detalhe: tabela com id, título, status (badge colorido), prioridade, dependências; filtro multi-select por status; gráfico Area Chart de evolução de features passing ao longo do tempo (dados de sessões); botão 'Rotacionar Contexto' por feature em failing; atualização real-time via SSE. Status cards clicáveis que filtram a tabela (6 mini-cards: pending, in_progress, failing, blocked, skipped, passing).",
-    "status": "failing",
+    "status": "blocked",
     "priority": 27,
-    "dependencies": ["F-026"],
+    "dependencies": [
+      "F-026"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-008", "PRP-009"],
+    "prp_ids": [
+      "PRP-008",
+      "PRP-009"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-008-frontend-dashboard-e-projetos.md",
     "tests": [
       "Tabela de features renderiza com id, título, status badge, prioridade, dependências",
@@ -617,11 +741,15 @@
     "id": "F-028",
     "title": "Frontend sessões — timeline e replay",
     "description": "Implementar tab Sessões na página de detalhe: lista de sessões (data, feature trabalhada, duração, resultado), click abre replay em modal fullscreen. Replay: timeline vertical de eventos (output.jsonl), cada evento como card com timestamp relativo, tipo (badge: tool_call=azul, message=cinza, error=vermelho), conteúdo (texto ou JSON colapsável). Filtro por tipo de evento. Botão copiar conteúdo. Progress viewer (agent-progress.txt em monospace, polling 5s, scroll auto).",
-    "status": "failing",
+    "status": "blocked",
     "priority": 28,
-    "dependencies": ["F-026"],
+    "dependencies": [
+      "F-026"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-009"],
+    "prp_ids": [
+      "PRP-009"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-009-frontend-sessoes-e-monitoring.md",
     "tests": [
       "Lista de sessões mostra data, feature, duração, resultado (badge passing/failing)",
@@ -642,11 +770,17 @@
     "id": "F-029",
     "title": "Frontend Kai chat — interface completa com streaming",
     "description": "Implementar page kai.tsx: layout fullscreen de chat com sidebar de conversas (desktop: coluna 280px, mobile: drawer), área de chat principal, input fixo inferior. Componentes: chat-window.tsx (scroll area, auto-scroll), message-bubble.tsx (user=direita primary, assistant=esquerda card, markdown básico, cursor piscando em streaming), tool-call-card.tsx (card colapsável com nome tool + badge status + duração, body com input/output JSON), suggestion-chips.tsx (4 chips no chat vazio), chat-input.tsx (textarea auto-resize max 4 linhas, Enter=enviar, Shift+Enter=nova linha). Hook useKai() com streaming via ReadableStream.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 29,
-    "dependencies": ["F-022", "F-023", "F-021"],
+    "dependencies": [
+      "F-022",
+      "F-023",
+      "F-021"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-010"],
+    "prp_ids": [
+      "PRP-010"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-010-frontend-kai-chat.md",
     "tests": [
       "Chat renderiza com sidebar de conversas (desktop) ou drawer (mobile)",
@@ -669,11 +803,15 @@
     "id": "F-030",
     "title": "PWA — manifest, service worker e instalação",
     "description": "Tornar hub instalável como PWA: manifest.json (name 'E-Kai', display standalone, theme_color fuchsia, ícones 192x192 e 512x512), service worker com Workbox (precache assets, cache-first para estáticos, network-first para API, fallback offline), registration em main.tsx. Meta tags: theme-color, apple-mobile-web-app-capable. Viewport com viewport-fit=cover para safe areas.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 30,
-    "dependencies": ["F-022"],
+    "dependencies": [
+      "F-022"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-011"],
+    "prp_ids": [
+      "PRP-011"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-011-pwa-e-notificacoes.md",
     "tests": [
       "manifest.json existe com name 'E-Kai', display 'standalone', theme_color correto",
@@ -692,11 +830,17 @@
     "id": "F-031",
     "title": "Notificações — toasts, push e sino",
     "description": "Implementar sistema de notificações: hook useNotifications() que escuta SSE e exibe toasts via Sonner (feature:status → success/warning, loop:start/stop → info). Push notifications: POST /api/notifications/subscribe (PushSubscription), backend envia push via web-push quando app não em foco. Sino (Bell) no shell com badge de contagem não-lidas. Panel (Sheet mobile, Popover desktop) com lista de notificações. Endpoints: GET /api/notifications, PATCH /api/notifications/:id/read, PATCH /api/notifications/read-all. Preferences com toggles por tipo.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 31,
-    "dependencies": ["F-020", "F-022", "F-030"],
+    "dependencies": [
+      "F-020",
+      "F-022",
+      "F-030"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-011"],
+    "prp_ids": [
+      "PRP-011"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-011-pwa-e-notificacoes.md",
     "tests": [
       "Toast aparece quando SSE recebe feature:status (passing=success, failing=warning)",
@@ -717,11 +861,16 @@
     "id": "F-032",
     "title": "Kai proativo — monitoramento e alertas automáticos",
     "description": "Implementar modo proativo da Kai no backbone: toggle em Settings (on/off), cron (setInterval 5min) que verifica loops ativos sem progresso >10min e features com max_retries excedido, cria notificação type kai_proactive_alert com sugestão de ação corretiva. Metadata inclui link para projeto/feature afetada. Todas ações logadas. Endpoint PATCH /api/settings para salvar preferência.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 32,
-    "dependencies": ["F-021", "F-031"],
+    "dependencies": [
+      "F-021",
+      "F-031"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-011"],
+    "prp_ids": [
+      "PRP-011"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-011-pwa-e-notificacoes.md",
     "tests": [
       "Toggle 'Modo Proativo' existe em Settings e persiste valor",
@@ -738,11 +887,17 @@
     "id": "F-033",
     "title": "Sistema de onboarding — tour, setup wizard e intro Kai",
     "description": "Implementar onboarding completo: backend (onboarding-service.ts + rotas GET/POST /api/onboarding/progress, complete, reset), hook useOnboarding() (shouldShowTour, shouldShowSetup, completeStep). WelcomeTour: modal fullscreen com 4 steps animados (framer-motion), navegação anterior/próximo/pular. SetupWizard: card centralizado para API key OpenRouter (step 1: input, step 2: testar conexão POST /api/settings/test-openrouter, step 3: sucesso). KaiIntroMessage no primeiro acesso ao chat. Empty states com CTA. Auto-complete steps (first_project, first_loop). Botão 'Rever Tour' em Settings.",
-    "status": "failing",
+    "status": "blocked",
     "priority": 33,
-    "dependencies": ["F-022", "F-029", "F-024"],
+    "dependencies": [
+      "F-022",
+      "F-029",
+      "F-024"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-012"],
+    "prp_ids": [
+      "PRP-012"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-012-onboarding.md",
     "tests": [
       "Primeiro login: Welcome Tour aparece como modal fullscreen",
@@ -766,11 +921,18 @@
     "id": "F-034",
     "title": "Settings — configurações do sistema",
     "description": "Implementar página settings.tsx: formulário para OpenRouter API key (input com máscara, exibe últimos 4 chars), campo modelo padrão da Kai (select), campo path padrão do runsDir (input path). Salvar via POST /api/settings com validação (testar conexão OpenRouter). Seção Notificações (toggles por tipo). Seção Aparência (dark mode toggle). Seção Onboarding (botão 'Rever Tour'). Backend: CRUD em system_settings (GET /api/settings, PATCH /api/settings).",
-    "status": "failing",
+    "status": "blocked",
     "priority": 34,
-    "dependencies": ["F-022", "F-023", "F-017"],
+    "dependencies": [
+      "F-022",
+      "F-023",
+      "F-017"
+    ],
     "retries": 0,
-    "prp_ids": ["PRP-012", "PRP-011"],
+    "prp_ids": [
+      "PRP-012",
+      "PRP-011"
+    ],
     "prp_path": "D:\\sources\\_unowned\\swarm-factory\\runs\\worktrees\\02-app-e-kai-v1\\milestones\\02-app-e-kai-v1\\03-prps\\PRP-012-onboarding.md",
     "tests": [
       "Página /settings renderiza com seções: API, Modelo, Notificações, Aparência, Onboarding",
