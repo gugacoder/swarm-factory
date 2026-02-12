@@ -25,6 +25,22 @@ const YELLOW = '\x1b[1;33m';
 const CYAN = '\x1b[0;36m';
 const NC = '\x1b[0m';
 
+// --- Estado global para cleanup em crash ---
+const loopCtx = {
+  featuresPath: '',
+  statePath: '',
+  pidPath: '',
+  progressPath: '',
+  featureId: '',
+  loopStartedAt: '',
+  iteration: 0,
+  featuresDone: 0,
+  total: 0,
+  maxIterations: null,
+  maxFeatures: null,
+  cleaning: false,
+};
+
 // --- Utilitários ---
 function now() {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -90,13 +106,13 @@ function computeBlocked(features) {
   );
 
   for (const f of features) {
-    if (f.status === 'pending' || f.status === 'failing') {
-      if (f.dependencies && f.dependencies.length > 0) {
-        const depsOk = f.dependencies.every(d => passingIds.has(d));
-        if (!depsOk) {
-          f.status = 'blocked';
-        }
-      }
+    const hasDeps = f.dependencies && f.dependencies.length > 0;
+    const depsOk = !hasDeps || f.dependencies.every(d => passingIds.has(d));
+
+    if ((f.status === 'pending' || f.status === 'failing') && hasDeps && !depsOk) {
+      f.status = 'blocked';
+    } else if (f.status === 'blocked' && depsOk) {
+      f.status = 'failing';
     }
   }
 }
@@ -277,6 +293,81 @@ async function spawnAgent(config, featureId, sessionDir) {
   });
 }
 
+// --- Emergency cleanup (signal/crash) ---
+async function emergencyCleanup(reason) {
+  if (loopCtx.cleaning) return; // evitar reentrada
+  loopCtx.cleaning = true;
+
+  console.error(`${RED}[CLEANUP] Loop encerrado inesperadamente: ${reason}${NC}`);
+
+  try {
+    // Marcar feature in_progress como failing
+    if (loopCtx.featuresPath) {
+      const features = await loadFeatures(loopCtx.featuresPath);
+      for (const f of features) {
+        if (f.status === 'in_progress') {
+          f.status = 'failing';
+          f.retries = (f.retries || 0) + 1;
+        }
+      }
+      await saveFeatures(loopCtx.featuresPath, features);
+    }
+  } catch { /* melhor esforço */ }
+
+  try {
+    // Atualizar state → exited
+    if (loopCtx.statePath) {
+      await writeState(loopCtx.statePath, makeState({
+        status: 'exited',
+        iteration: loopCtx.iteration,
+        max_iterations: loopCtx.maxIterations,
+        max_features: loopCtx.maxFeatures,
+        total: loopCtx.total,
+        done: 0,
+        remaining: loopCtx.total,
+        feature_id: loopCtx.featureId,
+        features_done: loopCtx.featuresDone,
+        started_at: loopCtx.loopStartedAt,
+        exit_reason: reason,
+      }));
+    }
+  } catch { /* melhor esforço */ }
+
+  try {
+    // Limpar PID file
+    if (loopCtx.pidPath) {
+      await unlink(loopCtx.pidPath);
+    }
+  } catch { /* melhor esforço */ }
+
+  try {
+    // Registrar no progress
+    if (loopCtx.progressPath) {
+      const msg = `[${now()}] [CRASH] Loop encerrado: ${reason}` +
+        (loopCtx.featureId ? ` (feature: ${loopCtx.featureId})` : '');
+      await appendProgress(loopCtx.progressPath, msg);
+    }
+  } catch { /* melhor esforço */ }
+}
+
+// Registrar signal handlers
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(sig, async () => {
+    await emergencyCleanup(`signal_${sig}`);
+    process.exit(1);
+  });
+}
+
+process.on('uncaughtException', async (err) => {
+  await emergencyCleanup(`uncaughtException: ${err.message}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (reason) => {
+  await emergencyCleanup(`unhandledRejection: ${reason}`);
+  process.exit(1);
+});
+
 // --- Main ---
 async function main() {
   // 1. Carregar config
@@ -317,10 +408,34 @@ async function main() {
   // 4. Escrever PID
   await writeFile(pidPath, String(process.pid) + '\n', 'utf8');
 
+  // 4a. Popular loopCtx para cleanup em crash
+  loopCtx.featuresPath = featuresPath;
+  loopCtx.statePath = statePath;
+  loopCtx.pidPath = pidPath;
+  loopCtx.progressPath = progressPath;
+  loopCtx.maxIterations = maxIterations || null;
+  loopCtx.maxFeatures = maxFeatures || null;
+
   // 5. Estado inicial
   const loopStartedAt = now();
+  loopCtx.loopStartedAt = loopStartedAt;
   let features = await loadFeatures(featuresPath);
+
+  // 5a. Cleanup: reverter in_progress órfãos (loop morreu no meio)
+  let orphans = 0;
+  for (const f of features) {
+    if (f.status === 'in_progress') {
+      f.status = 'failing';
+      orphans++;
+    }
+  }
+  if (orphans > 0) {
+    console.log(`${YELLOW}AVISO: ${orphans} feature(s) in_progress órfã(s) revertida(s) para failing.${NC}`);
+    await saveFeatures(featuresPath, features);
+  }
+
   const total = features.length;
+  loopCtx.total = total;
   const counts = countByStatus(features);
 
   const limitLabel = maxIterations === 0 ? '∞' : String(maxIterations);
@@ -474,6 +589,8 @@ async function main() {
     }
 
     const featureId = next.id;
+    loopCtx.featureId = featureId;
+    loopCtx.iteration = iteration;
     const currentCounts = countByStatus(features);
     const done = currentCounts.passing;
     const remaining = total - done;
@@ -536,6 +653,7 @@ async function main() {
 
     if (updatedFeature && updatedFeature.status === 'passing') {
       featuresDone++;
+      loopCtx.featuresDone = featuresDone;
       console.log(`${GREEN}Feature ${featureId} → passing${NC}`);
       await notifyWebhooks(config, progressPath, 'feature_done', {
         feature_id: featureId,
@@ -594,6 +712,9 @@ async function main() {
         }
       }
     }
+
+    // 6n. Limpar featureId do ctx (feature processada)
+    loopCtx.featureId = '';
 
     // 6n. Atualizar state → between
     await writeState(statePath, makeState({
@@ -673,20 +794,6 @@ async function main() {
 main().catch(async err => {
   console.error(`${RED}Erro fatal no loop: ${err.message}${NC}`);
   console.error(err.stack);
-  try {
-    const config = JSON.parse(await readFile(resolve('agent-harness.json'), 'utf8'));
-    const progressPath = config.artifacts?.progress || resolve('agent-progress.txt');
-    await notifyWebhooks(config, progressPath, 'error', {
-      feature_id: null,
-      feature_title: null,
-      iteration: 0,
-      features_done: 0,
-      features_total: 0,
-      exit_reason: 'error',
-      error_message: err.message,
-    });
-  } catch {
-    // Se não conseguir notificar, não impede o exit
-  }
+  await emergencyCleanup(`fatal: ${err.message}`);
   process.exit(1);
 });

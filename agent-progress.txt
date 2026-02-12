@@ -1,7 +1,7 @@
 # Agent Progress — Swarm Factory / 02-app-e-kai-v1
 
 ## Current Status
-17/34 features passing. F-017 concluida. Proxima: F-018 (Backend auth — JWT + refresh token).
+19/34 features passing. F-020 concluida. Proxima: F-021 (Backend Kai agent — LangGraph com 12 tools).
 
 ## Specs Path
 D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-app-e-kai-v1
@@ -41,9 +41,9 @@ D:\sources\_unowned\swarm-factory\runs\worktrees\02-app-e-kai-v1\milestones\02-a
 
 [x] F-016 — Monorepo e infraestrutura base (priority 16, deps: nenhuma) [PRP-001]
 [x] F-017 — Database migrations — schema completo (priority 17, deps: F-016) [PRP-002]
-[ ] F-018 — Backend auth — JWT + refresh token (priority 18, deps: F-017) [PRP-003]
-[ ] F-019 — Backend API projetos — CRUD + workspace + loop (priority 19, deps: F-018) [PRP-004]
-[ ] F-020 — Backend SSE — eventos em tempo real (priority 20, deps: F-019) [PRP-005]
+[x] F-018 — Backend auth — JWT + refresh token (priority 18, deps: F-017) [PRP-003]
+[x] F-019 — Backend API projetos — CRUD + workspace + loop (priority 19, deps: F-018) [PRP-004]
+[x] F-020 — Backend SSE — eventos em tempo real (priority 20, deps: F-019) [PRP-005]
 [ ] F-021 — Backend Kai agent — LangGraph com 12 tools (priority 21, deps: F-019) [PRP-006]
 [ ] F-022 — Frontend shell — layout, sidebar, bottom nav e routing (priority 22, deps: F-016, F-018) [PRP-007]
 [ ] F-023 — Frontend auth — modulo de autenticacao (priority 23, deps: F-016) [PRP-007]
@@ -79,3 +79,9 @@ Session 1-17 (Milestone 01-new-concepts): 15/15 features implementadas — SDK M
 Session 18 (Initializer — Milestone 02-app-e-kai-v1): Harness atualizado para onda 02-app-e-kai-v1 — 19 novas features (F-016 a F-034), todas failing. App E-Kai: gestao PWA mobile-first com copilot agentico Kai.
 Session 19 (F-016 — Monorepo e infraestrutura base): Criada estrutura completa do monorepo e-Kai. apps/hub com React 19 + Vite + Tailwind 4 + shadcn/ui (tema Mira: Gray + Fuchsia) na porta 9000. apps/backbone com Hono + CORS + logger + health check na porta 9090. database/ com migrations dir e script migrate.js. docker-compose.dev.yml com PostgreSQL 16 na porta 9032. 20 componentes shadcn/ui base criados. npm workspaces configurado. Proxy Vite /api → backbone. lib/api.ts com fetch wrapper + refresh auto. Todos os testes da feature verificados.
 Session 20 (F-017 — Database migrations): 12 migrations SQL idempotentes criadas em database/migrations/. Schema completo: 4 enums, 10 tabelas, 9 indices custom, 4 triggers set_updated_at. Seed admin (admin@ekai.local/admin123, bcrypt cost 12, role admin). Scripts npm run migrate e npm run migrate:seed com dotenv-cli. PostgreSQL porta 9033 (porta 9032 ocupada por outro projeto). Idempotencia testada (rodar 2x sem erro). Hash bcrypt verificado via crypt().
+[2026-02-12T04:23:43Z] [FALHA] Feature F-023: tentativa 1
+[2026-02-12T04:33:07Z] [FALHA] Feature F-018: tentativa 1
+Session 21 (F-018 — Backend auth): Corrigido rate limiter que contava todas as rotas /api/auth/* juntas — agora conta por IP+path. Auth completa: auth-service.ts (login, refresh, logout, changePassword, validateAccessToken, getUserById), middleware auth.ts (Bearer token + PUBLIC_PATHS), rate-limit.ts (5 req/min por IP+path), routes/auth.ts (login, refresh, logout, me, password change com Zod). Cookies httpOnly+Secure+SameSite=Strict. JWT jose HS256: access 15min, refresh 7d com jti em refresh_tokens. bcrypt cost 12. 36 testes passando em test-auth.mjs.
+[2026-02-12T05:09:41Z] [FALHA] Feature F-020: tentativa 1
+[2026-02-12T05:18:30Z] [FALHA] Feature F-020: tentativa 2
+Session 22 (F-020 — Backend SSE): Codigo SSE ja estava implementado de sessoes anteriores mas o teste falhava porque outra aplicacao ocupava a porta 9090. Nesta sessao: verificado e validado todo o sistema SSE — event-service.ts (EventEmitter + broadcast + heartbeat 30s + client management), watcher-service.ts (chokidar file watching + debounce 500ms + features.json diff + state.json diff + notificacoes no banco), routes/events.ts (TransformStream SSE + cleanup via abort signal). 11 testes passando em test-sse.mjs: Content-Type, connected comment, feature:status events, IDs incrementais, debounce, multiplos clientes, auth obrigatorio, heartbeat keepalive.

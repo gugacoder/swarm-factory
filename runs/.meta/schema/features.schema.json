@@ -67,6 +67,10 @@
         "completed_at": {
           "type": ["string", "null"],
           "description": "Timestamp de conclusão"
+        },
+        "prp_path": {
+          "type": "string",
+          "description": "Caminho absoluto do PRP de origem"
         }
       }
     }

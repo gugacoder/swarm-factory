@@ -452,12 +452,13 @@
     "id": "F-018",
     "title": "Backend auth — JWT + refresh token",
     "description": "Implementar autenticação completa no backbone: auth-service.ts (bcrypt hash/verify, JWT sign/verify com jose, refresh token com jti), middleware auth.ts (extrair Bearer token, verificar, injetar userId no context), rotas auth.ts: POST /api/auth/login (email+senha → access token + refresh cookie httpOnly), POST /api/auth/refresh (cookie → novo access token), POST /api/auth/logout (revogar refresh), GET /api/auth/me (dados do usuário). Rate limiting 5/min em auth. Access token 15min, refresh token 7 dias.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T04:50:00Z",
     "priority": 18,
     "dependencies": [
       "F-017"
     ],
-    "retries": 0,
+    "retries": 1,
     "prp_ids": [
       "PRP-003"
     ],
@@ -481,7 +482,8 @@
     "id": "F-019",
     "title": "Backend API projetos — CRUD + workspace + loop",
     "description": "Implementar rotas REST para projetos no backbone: project-service.ts (usa SDK MJS existente: loadProject, listProjects, createProject, getStatus, initWorkspace), watcher-service.ts (chokidar watch em runsDir para detectar mudanças em features.json). Rotas: GET /api/projects (lista), POST /api/projects (criar), GET /api/projects/:slug (detalhe + status), PATCH /api/projects/:slug (editar params), DELETE /api/projects/:slug (excluir config), POST /api/projects/:slug/init (inicializar workspace), POST /api/projects/:slug/loop/start (iniciar loop), POST /api/projects/:slug/loop/stop (parar loop), GET /api/projects/:slug/features (features.json), GET /api/projects/:slug/sessions (listar sessões), GET /api/projects/:slug/progress (agent-progress.txt).",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T05:10:00Z",
     "priority": 19,
     "dependencies": [
       "F-018"
@@ -512,12 +514,13 @@
     "id": "F-020",
     "title": "Backend SSE — eventos em tempo real",
     "description": "Implementar endpoint SSE GET /api/events no backbone com event emitter centralizado. watcher-service.ts usa chokidar para observar mudanças em features.json e agent-harness.state de projetos ativos, emitindo eventos tipados (feature:status, loop:start, loop:stop, loop:progress, project:created). Debounce de 500ms para file changes. Reconexão com Last-Event-ID. Cada evento tem id incremental, type e data JSON.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T05:25:00Z",
     "priority": 20,
     "dependencies": [
       "F-019"
     ],
-    "retries": 0,
+    "retries": 2,
     "prp_ids": [
       "PRP-005"
     ],
@@ -539,7 +542,7 @@
     "id": "F-021",
     "title": "Backend Kai agent — LangGraph com 12 tools",
     "description": "Implementar agente Kai no backbone usando LangGraph.js: graph com nodes classify→reason→act→respond, 12 tools (list_projects, get_status, create_project, init_workspace, start_loop, stop_loop, read_features, read_session, read_progress, read_logs, adjust_params, rotate_context), config OpenRouter (Gemini Flash para classify/reason, Claude Haiku para respond), prompts em pt-BR. Rota POST /api/kai/chat com streaming SSE (tokens parciais + tool calls visíveis). Persistência em kai_conversations, kai_messages, kai_tool_calls, kai_executions. GET /api/kai/conversations e GET /api/kai/conversations/:id/messages.",
-    "status": "blocked",
+    "status": "failing",
     "priority": 21,
     "dependencies": [
       "F-019"
@@ -568,7 +571,7 @@
     "id": "F-022",
     "title": "Frontend shell — layout, sidebar, bottom nav e routing",
     "description": "Implementar app shell mobile-first no hub: app-shell.tsx (container com sidebar desktop md+ ou bottom nav mobile <md), sidebar.tsx (colapsável, 4 itens: Dashboard/Projetos/Kai/Config, avatar+logout no footer, 240px expandida/64px colapsada, estado em localStorage), bottom-nav.tsx (fixed bottom, 4 itens, touch 44x44px), breadcrumb-bar.tsx (gerado da rota atual). React Router com rotas protegidas (ProtectedRoute), páginas placeholder. Dark mode com class strategy + toggle + localStorage.",
-    "status": "blocked",
+    "status": "failing",
     "priority": 22,
     "dependencies": [
       "F-016",
@@ -598,12 +601,12 @@
     "id": "F-023",
     "title": "Frontend auth — módulo de autenticação",
     "description": "Implementar lib/auth.ts no hub: armazenar access token em memória (variável de módulo), login(email,password) → POST /api/auth/login, refresh() → POST /api/auth/refresh (cookie automático), logout() → POST /api/auth/logout, getUser() → GET /api/auth/me, getAccessToken(). Implementar lib/api.ts: fetch wrapper com Authorization Bearer header, interceptor 401 → refresh → falha → /login. Métodos: get, post, patch, del.",
-    "status": "in_progress",
+    "status": "failing",
     "priority": 23,
     "dependencies": [
       "F-016"
     ],
-    "retries": 0,
+    "retries": 1,
     "prp_ids": [
       "PRP-007"
     ],
