@@ -141,6 +141,14 @@ Brainstorming -> `/derive:specs` -> Specs (requirements, user-stories, design, e
 - ES Modules (`.mjs` para scripts Node.js)
 - Node built-ins com `node:` prefix
 
+## Usuarios de teste
+
+| Email | Senha | Role |
+|---|---|---|
+| admin@ekai.local | admin123 | admin |
+
+Seed: `database/seeds/001_admin_user.sql`. Login: `POST /api/auth/login`.
+
 ## Stack do Scaffold (`postgres-n8n`)
 
 Quando um workspace e criado a partir deste scaffold, ele contem:

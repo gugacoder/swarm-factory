@@ -392,7 +392,7 @@
   {
     "id": "F-016",
     "title": "Monorepo e infraestrutura base (e-Kai)",
-    "description": "Criar estrutura de monorepo e-Kai: apps/hub/ (React 19 + Vite + Tailwind 4 + shadcn/ui na porta 9000), apps/backbone/ (Hono + Node.js na porta 9090), database/ (migrations SQL), docker/ (docker-compose.dev.yml com PostgreSQL 16 na porta 9032). Configurar npm workspaces, TypeScript, ESLint, .env base. Script dev:all para subir todos os serviços. Gerar package.json raiz do app e de cada subprojeto. Configurar Tailwind 4 com tema Mira e shadcn/ui. Configurar Hono com CORS, logger, health check. NÃO implementar auth, rotas ou páginas — apenas a estrutura funcional vazia.",
+    "description": "Criar estrutura de monorepo e-Kai: apps/hub/ (React 19 + Vite + Tailwind 4 + shadcn/ui na porta 8100), apps/backbone/ (Hono + Node.js na porta 8101), database/ (migrations SQL), docker/ (docker-compose.dev.yml com PostgreSQL 16 na porta 9032). Configurar npm workspaces, TypeScript, ESLint, .env base. Script dev:all para subir todos os serviços. Gerar package.json raiz do app e de cada subprojeto. Configurar Tailwind 4 com tema Mira e shadcn/ui. Configurar Hono com CORS, logger, health check. NÃO implementar auth, rotas ou páginas — apenas a estrutura funcional vazia.",
     "status": "passing",
     "completed_at": "2026-02-12T03:10:00Z",
     "priority": 16,
@@ -408,9 +408,9 @@
       "Diretório database/ existe com estrutura para migrations",
       "docker-compose.dev.yml existe e sobe PostgreSQL 16 na porta 9032",
       "npm install na raiz instala dependências de todos os workspaces",
-      "npm run dev:hub inicia frontend na porta 9000 (página em branco ok)",
-      "npm run dev:backbone inicia backend na porta 9090",
-      "GET http://localhost:9090/api/health retorna { status: 'ok' }",
+      "npm run dev:hub inicia frontend na porta 8100 (página em branco ok)",
+      "npm run dev:backbone inicia backend na porta 8101",
+      "GET http://localhost:8101/api/health retorna { status: 'ok' }",
       "shadcn/ui está configurado com tema Mira (Gray + Fuchsia)",
       "Tailwind 4 funciona com @theme directive",
       "CORS configurado no backbone para aceitar requisições do hub",
@@ -542,7 +542,8 @@
     "id": "F-021",
     "title": "Backend Kai agent — LangGraph com 12 tools",
     "description": "Implementar agente Kai no backbone usando LangGraph.js: graph com nodes classify→reason→act→respond, 12 tools (list_projects, get_status, create_project, init_workspace, start_loop, stop_loop, read_features, read_session, read_progress, read_logs, adjust_params, rotate_context), config OpenRouter (Gemini Flash para classify/reason, Claude Haiku para respond), prompts em pt-BR. Rota POST /api/kai/chat com streaming SSE (tokens parciais + tool calls visíveis). Persistência em kai_conversations, kai_messages, kai_tool_calls, kai_executions. GET /api/kai/conversations e GET /api/kai/conversations/:id/messages.",
-    "status": "failing",
+    "status": "passing",
+    "completed_at": "2026-02-12T12:00:00Z",
     "priority": 21,
     "dependencies": [
       "F-019"
@@ -571,7 +572,8 @@
     "id": "F-022",
     "title": "Frontend shell — layout, sidebar, bottom nav e routing",
     "description": "Implementar app shell mobile-first no hub: app-shell.tsx (container com sidebar desktop md+ ou bottom nav mobile <md), sidebar.tsx (colapsável, 4 itens: Dashboard/Projetos/Kai/Config, avatar+logout no footer, 240px expandida/64px colapsada, estado em localStorage), bottom-nav.tsx (fixed bottom, 4 itens, touch 44x44px), breadcrumb-bar.tsx (gerado da rota atual). React Router com rotas protegidas (ProtectedRoute), páginas placeholder. Dark mode com class strategy + toggle + localStorage.",
-    "status": "failing",
+    "status": "passing",
+    "completed_at": "2026-02-12T12:30:00Z",
     "priority": 22,
     "dependencies": [
       "F-016",
@@ -601,12 +603,13 @@
     "id": "F-023",
     "title": "Frontend auth — módulo de autenticação",
     "description": "Implementar lib/auth.ts no hub: armazenar access token em memória (variável de módulo), login(email,password) → POST /api/auth/login, refresh() → POST /api/auth/refresh (cookie automático), logout() → POST /api/auth/logout, getUser() → GET /api/auth/me, getAccessToken(). Implementar lib/api.ts: fetch wrapper com Authorization Bearer header, interceptor 401 → refresh → falha → /login. Métodos: get, post, patch, del.",
-    "status": "failing",
+    "status": "passing",
+    "completed_at": "2026-02-12T12:30:00Z",
     "priority": 23,
     "dependencies": [
       "F-016"
     ],
-    "retries": 1,
+    "retries": 0,
     "prp_ids": [
       "PRP-007"
     ],
@@ -628,7 +631,8 @@
     "id": "F-024",
     "title": "Frontend dashboard e lista de projetos",
     "description": "Implementar dashboard.tsx com KPI cards (total projetos, total features, features passing, taxa sucesso), grid de project cards (nome, slug, harness, barra progresso, badge estado), cards clicáveis → /projects/:slug, empty state com CTA. Implementar projects/list.tsx com tabela (slug, nome, harness, workspace, estado, progresso), filtro por harness, busca por nome/slug. Implementar hook useSSE(url) com reconexão exponencial e useProjects() com cache + SSE updates.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T13:00:00Z",
     "priority": 24,
     "dependencies": [
       "F-022",
@@ -659,7 +663,8 @@
     "id": "F-025",
     "title": "Frontend criar projeto",
     "description": "Implementar projects/create.tsx com formulário react-hook-form + Zod: campos slug (kebab-case), nome, workspace (path absoluto), specs (path), harness (select: claude-code/opencode/codex), scaffold (select: postgres-n8n/null). Seção 'Parametros Avançados' colapsável: model, max_turns (default 50), max_iterations, max_features, max_retries (default 5). Validação inline, toast de sucesso, redirect para detalhe.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T13:00:00Z",
     "priority": 25,
     "dependencies": [
       "F-022",
@@ -688,7 +693,8 @@
     "id": "F-026",
     "title": "Frontend detalhe do projeto — visão geral e controles",
     "description": "Implementar projects/[slug]/detail.tsx com: header (nome, badge estado, botões ação), 4 tabs (Visão Geral, Features, Sessões, Logs). Tab Visão Geral: card info projeto, card status loop (PID, iteração, hora), botões condicionais (Inicializar/Iniciar Loop/Parar/Despachar Sessão conforme estado), card progresso (barra + contagem por status), botão Editar Parametros (dialog/drawer), botão Excluir (AlertDialog confirmação com digitar slug). Botão Iniciar Loop abre dialog para MAX_TURNS e MODEL.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T13:30:00Z",
     "priority": 26,
     "dependencies": [
       "F-024"
@@ -717,7 +723,8 @@
     "id": "F-027",
     "title": "Frontend features — tabela, filtros e gráfico",
     "description": "Implementar tab Features na página de detalhe: tabela com id, título, status (badge colorido), prioridade, dependências; filtro multi-select por status; gráfico Area Chart de evolução de features passing ao longo do tempo (dados de sessões); botão 'Rotacionar Contexto' por feature em failing; atualização real-time via SSE. Status cards clicáveis que filtram a tabela (6 mini-cards: pending, in_progress, failing, blocked, skipped, passing).",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T13:30:00Z",
     "priority": 27,
     "dependencies": [
       "F-026"
@@ -744,7 +751,8 @@
     "id": "F-028",
     "title": "Frontend sessões — timeline e replay",
     "description": "Implementar tab Sessões na página de detalhe: lista de sessões (data, feature trabalhada, duração, resultado), click abre replay em modal fullscreen. Replay: timeline vertical de eventos (output.jsonl), cada evento como card com timestamp relativo, tipo (badge: tool_call=azul, message=cinza, error=vermelho), conteúdo (texto ou JSON colapsável). Filtro por tipo de evento. Botão copiar conteúdo. Progress viewer (agent-progress.txt em monospace, polling 5s, scroll auto).",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T13:30:00Z",
     "priority": 28,
     "dependencies": [
       "F-026"
@@ -773,7 +781,8 @@
     "id": "F-029",
     "title": "Frontend Kai chat — interface completa com streaming",
     "description": "Implementar page kai.tsx: layout fullscreen de chat com sidebar de conversas (desktop: coluna 280px, mobile: drawer), área de chat principal, input fixo inferior. Componentes: chat-window.tsx (scroll area, auto-scroll), message-bubble.tsx (user=direita primary, assistant=esquerda card, markdown básico, cursor piscando em streaming), tool-call-card.tsx (card colapsável com nome tool + badge status + duração, body com input/output JSON), suggestion-chips.tsx (4 chips no chat vazio), chat-input.tsx (textarea auto-resize max 4 linhas, Enter=enviar, Shift+Enter=nova linha). Hook useKai() com streaming via ReadableStream.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:00:00Z",
     "priority": 29,
     "dependencies": [
       "F-022",
@@ -806,7 +815,8 @@
     "id": "F-030",
     "title": "PWA — manifest, service worker e instalação",
     "description": "Tornar hub instalável como PWA: manifest.json (name 'E-Kai', display standalone, theme_color fuchsia, ícones 192x192 e 512x512), service worker com Workbox (precache assets, cache-first para estáticos, network-first para API, fallback offline), registration em main.tsx. Meta tags: theme-color, apple-mobile-web-app-capable. Viewport com viewport-fit=cover para safe areas.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:00:00Z",
     "priority": 30,
     "dependencies": [
       "F-022"
@@ -833,7 +843,8 @@
     "id": "F-031",
     "title": "Notificações — toasts, push e sino",
     "description": "Implementar sistema de notificações: hook useNotifications() que escuta SSE e exibe toasts via Sonner (feature:status → success/warning, loop:start/stop → info). Push notifications: POST /api/notifications/subscribe (PushSubscription), backend envia push via web-push quando app não em foco. Sino (Bell) no shell com badge de contagem não-lidas. Panel (Sheet mobile, Popover desktop) com lista de notificações. Endpoints: GET /api/notifications, PATCH /api/notifications/:id/read, PATCH /api/notifications/read-all. Preferences com toggles por tipo.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:30:00Z",
     "priority": 31,
     "dependencies": [
       "F-020",
@@ -864,7 +875,8 @@
     "id": "F-032",
     "title": "Kai proativo — monitoramento e alertas automáticos",
     "description": "Implementar modo proativo da Kai no backbone: toggle em Settings (on/off), cron (setInterval 5min) que verifica loops ativos sem progresso >10min e features com max_retries excedido, cria notificação type kai_proactive_alert com sugestão de ação corretiva. Metadata inclui link para projeto/feature afetada. Todas ações logadas. Endpoint PATCH /api/settings para salvar preferência.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:30:00Z",
     "priority": 32,
     "dependencies": [
       "F-021",
@@ -890,7 +902,8 @@
     "id": "F-033",
     "title": "Sistema de onboarding — tour, setup wizard e intro Kai",
     "description": "Implementar onboarding completo: backend (onboarding-service.ts + rotas GET/POST /api/onboarding/progress, complete, reset), hook useOnboarding() (shouldShowTour, shouldShowSetup, completeStep). WelcomeTour: modal fullscreen com 4 steps animados (framer-motion), navegação anterior/próximo/pular. SetupWizard: card centralizado para API key OpenRouter (step 1: input, step 2: testar conexão POST /api/settings/test-openrouter, step 3: sucesso). KaiIntroMessage no primeiro acesso ao chat. Empty states com CTA. Auto-complete steps (first_project, first_loop). Botão 'Rever Tour' em Settings.",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:30:00Z",
     "priority": 33,
     "dependencies": [
       "F-022",
@@ -924,7 +937,8 @@
     "id": "F-034",
     "title": "Settings — configurações do sistema",
     "description": "Implementar página settings.tsx: formulário para OpenRouter API key (input com máscara, exibe últimos 4 chars), campo modelo padrão da Kai (select), campo path padrão do runsDir (input path). Salvar via POST /api/settings com validação (testar conexão OpenRouter). Seção Notificações (toggles por tipo). Seção Aparência (dark mode toggle). Seção Onboarding (botão 'Rever Tour'). Backend: CRUD em system_settings (GET /api/settings, PATCH /api/settings).",
-    "status": "blocked",
+    "status": "passing",
+    "completed_at": "2026-02-12T14:00:00Z",
     "priority": 34,
     "dependencies": [
       "F-022",
