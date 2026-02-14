@@ -11,11 +11,11 @@ export default defineConfig({
     },
   },
   server: {
-    port: parseInt(process.env.HUB_PORT || '9000'),
+    port: parseInt(process.env.HUB_PORT || '8100'),
     host: true,
     proxy: {
       '/api': {
-        target: `http://localhost:${process.env.BACKBONE_PORT || '9090'}`,
+        target: `http://localhost:${process.env.BACKBONE_PORT || '8101'}`,
         changeOrigin: true,
       },
     },
