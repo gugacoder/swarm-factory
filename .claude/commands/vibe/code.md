@@ -37,9 +37,9 @@ Selecione a feature de MAIOR PRIORIDADE com status "failing" cujas dependências
 - TESTE antes de marcar como passing — rode os testes definidos na feature.
 - Se encontrar bugs de sessões anteriores, CORRIJA PRIMEIRO antes de avançar.
 - **PORTAS**: Antes de iniciar um dev server, SEMPRE mate o processo na porta primeiro:
-  - Windows: `npx kill-port 9090 && npm run dev:backbone`
-  - Linux/Mac: `lsof -ti:9090 | xargs kill -9 2>/dev/null; npm run dev:backbone`
-  - Portas do projeto: hub=9000, backbone=9090, postgres=9032
+  - Windows: `npx kill-port 8101 && npm run dev:backbone`
+  - Linux/Mac: `lsof -ti:8101 | xargs kill -9 2>/dev/null; npm run dev:backbone`
+  - Portas do projeto: hub=8100, backbone=8101, postgres=8102
   - NUNCA assuma que a porta está livre. NUNCA confie em resposta de porta ocupada por outro processo.
 - V2: Consulte o `specs` de `.harness/{session}/config.json` para referências técnicas e specs. Consulte `.harness/learnings.md` para lições aprendidas.
 - V1: Consulte o `planning_path` de `agent-harness.json` para referências técnicas e specs.

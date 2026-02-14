@@ -1,7 +1,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const BASE = 'http://localhost:9090';
+const BASE = 'http://localhost:8101';
 let passed = 0;
 let failed = 0;
 

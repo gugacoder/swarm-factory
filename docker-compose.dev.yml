@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ekai
     ports:
-      - "${DB_PORT:-9032}:5432"
+      - "${DB_PORT:-8102}:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro

@@ -3,7 +3,7 @@ import app from './app.js';
 import { eventService } from './services/event-service.js';
 import { startWatching } from './services/watcher-service.js';
 
-const port = parseInt(process.env.BACKBONE_PORT || '9090');
+const port = parseInt(process.env.BACKBONE_PORT || '8101');
 
 // Iniciar serviços de real-time
 eventService.start();
