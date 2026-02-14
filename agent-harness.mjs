@@ -268,9 +268,10 @@ async function spawnAgent(config, featureId, sessionDir) {
     // Escrever PID da sessão
     writeFile(join(sessionDir, 'pid'), String(proc.pid) + '\n', 'utf8').catch(() => {});
 
-    // Pipe stdin do command file
+    // Pipe stdin do command file + feature designada
     readFile(commandPath, 'utf8').then(content => {
-      proc.stdin.write(content);
+      const featureDirective = `\n\n## Feature Designada\n\nVocê DEVE implementar a feature **${featureId}**. NÃO escolha outra feature. Ignore qualquer outra feature com status failing — sua missão é EXCLUSIVAMENTE a ${featureId}.\n`;
+      proc.stdin.write(content + featureDirective);
       proc.stdin.end();
     }).catch(err => {
       proc.kill();

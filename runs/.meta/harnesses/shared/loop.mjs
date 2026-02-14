@@ -101,12 +101,12 @@ function computeBlocked(features) {
   );
 
   for (const f of features) {
-    if (f.status === 'pending' || f.status === 'failing') {
-      if (f.dependencies && f.dependencies.length > 0) {
-        const depsOk = f.dependencies.every(d => passingIds.has(d));
-        if (!depsOk) {
-          f.status = 'blocked';
-        }
+    if (f.dependencies && f.dependencies.length > 0) {
+      const depsOk = f.dependencies.every(d => passingIds.has(d));
+      if (!depsOk && (f.status === 'pending' || f.status === 'failing')) {
+        f.status = 'blocked';
+      } else if (depsOk && f.status === 'blocked') {
+        f.status = 'pending';
       }
     }
   }
