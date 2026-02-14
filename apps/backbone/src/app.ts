@@ -10,6 +10,10 @@ import loopRoutes from './routes/loops.js';
 import sessionRoutes from './routes/sessions.js';
 import featureRoutes from './routes/features.js';
 import eventRoutes from './routes/events.js';
+import kaiRoutes from './routes/kai.js';
+import notificationRoutes from './routes/notifications.js';
+import settingsRoutes from './routes/settings.js';
+import onboardingRoutes from './routes/onboarding.js';
 
 const app = new Hono();
 
@@ -18,8 +22,8 @@ app.use(
   '/api/*',
   cors({
     origin: [
-      `http://localhost:${process.env.HUB_PORT || '9000'}`,
-      'http://localhost:9000',
+      `http://localhost:${process.env.HUB_PORT || '8100'}`,
+      'http://localhost:8100',
     ],
     credentials: true,
     allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -53,5 +57,17 @@ app.route('/api/projects', featureRoutes);
 
 // SSE — eventos em tempo real
 app.route('/api/events', eventRoutes);
+
+// Kai — copilot agentico
+app.route('/api/kai', kaiRoutes);
+
+// Notificações
+app.route('/api/notifications', notificationRoutes);
+
+// Configurações
+app.route('/api/settings', settingsRoutes);
+
+// Onboarding
+app.route('/api/onboarding', onboardingRoutes);
 
 export default app;
