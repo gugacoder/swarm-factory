@@ -20,7 +20,7 @@ export function createModel(model: string, temperature = 0): ChatOpenAI {
       baseURL: OPENROUTER_BASE_URL,
       apiKey: getApiKey(),
       defaultHeaders: {
-        'HTTP-Referer': process.env.APP_URL || 'http://localhost:8100',
+        'HTTP-Referer': process.env.APP_URL || `http://localhost:${process.env.HUB_PORT}`,
         'X-Title': 'E-Kai',
       },
     },

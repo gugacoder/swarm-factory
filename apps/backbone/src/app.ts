@@ -22,8 +22,7 @@ app.use(
   '/api/*',
   cors({
     origin: [
-      `http://localhost:${process.env.HUB_PORT || '8100'}`,
-      'http://localhost:8100',
+      `http://localhost:${process.env.HUB_PORT}`,
     ],
     credentials: true,
     allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],

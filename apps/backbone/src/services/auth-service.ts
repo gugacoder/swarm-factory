@@ -3,8 +3,10 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import pool from '../db.js';
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production-32ch');
-const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || 'dev-jwt-refresh-secret-change-in-prod');
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET não configurada — verifique o .env');
+if (!process.env.JWT_REFRESH_SECRET) throw new Error('JWT_REFRESH_SECRET não configurada — verifique o .env');
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
+const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET);
 
 const ACCESS_TOKEN_EXPIRY = '15m';
 const REFRESH_TOKEN_EXPIRY_SECONDS = 7 * 24 * 60 * 60; // 7 dias

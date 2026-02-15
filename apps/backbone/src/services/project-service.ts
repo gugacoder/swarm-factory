@@ -22,7 +22,8 @@ function findWorkspaceRoot(): string {
 
 // RUNS_DIR resolvido a partir do root do workspace
 function getRunsDir(): string {
-  const raw = process.env.RUNS_DIR || './runs';
+  if (!process.env.RUNS_DIR) throw new Error('RUNS_DIR não configurada — verifique o .env');
+  const raw = process.env.RUNS_DIR;
   return resolve(findWorkspaceRoot(), raw);
 }
 
