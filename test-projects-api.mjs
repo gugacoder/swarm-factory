@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Teste dos endpoints da API de projetos (F-019)
 
-const BASE = 'http://localhost:8101';
+const BASE = 'http://localhost:5801';
 const SLUG = 'swarm-factory-02-app-e-kai-v1-cc'; // Projeto com workspace ativo
 
 async function login() {

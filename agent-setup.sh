@@ -47,7 +47,7 @@ if [ -n "$COMPOSE_FILE" ]; then
     sleep 3
     # Verificar se PostgreSQL esta acessivel
     if command -v pg_isready &>/dev/null; then
-      pg_isready -h localhost -p 8102 -t 10 2>/dev/null && echo "[OK] PostgreSQL acessivel na porta 8102" || echo "[WARN] PostgreSQL nao respondeu na porta 8102"
+      pg_isready -h localhost -p 5810 -t 10 2>/dev/null && echo "[OK] PostgreSQL acessivel na porta 5810" || echo "[WARN] PostgreSQL nao respondeu na porta 5810"
     else
       echo "[INFO] pg_isready nao disponivel — assumindo PostgreSQL pronto"
     fi
@@ -96,10 +96,10 @@ fi
 # NOTA: O coding agent deve iniciar manualmente quando precisar.
 # Este script apenas verifica se os comandos estao disponiveis.
 if [ -f "apps/hub/package.json" ]; then
-  echo "[INFO] Frontend disponivel: npm run dev:hub (porta 8100)"
+  echo "[INFO] Frontend disponivel: npm run dev:hub (porta 5800)"
 fi
 if [ -f "apps/backbone/package.json" ]; then
-  echo "[INFO] Backend disponivel: npm run dev:backbone (porta 8101)"
+  echo "[INFO] Backend disponivel: npm run dev:backbone (porta 5801)"
 fi
 
 # --- Smoke test: verificar que o workspace esta funcional ---
@@ -134,8 +134,8 @@ else
 fi
 
 # Health check do backend (se estiver rodando)
-if curl -s http://localhost:8101/api/health >/dev/null 2>&1; then
-  echo "[OK] Backend health check: $(curl -s http://localhost:8101/api/health)"
+if curl -s http://localhost:5801/api/health >/dev/null 2>&1; then
+  echo "[OK] Backend health check: $(curl -s http://localhost:5801/api/health)"
 else
   echo "[INFO] Backend nao esta rodando (inicie com npm run dev:backbone)"
 fi
