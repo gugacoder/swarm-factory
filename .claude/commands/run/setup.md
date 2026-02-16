@@ -15,13 +15,8 @@ Prepara a workspace de um run e executa o Initializer Agent.
    ```
    node runs/.meta/api/get-status.mjs --slug X --format json
    ```
-4. Execute o initializer no workspace conforme a versão detectada:
+4. Execute o initializer no workspace:
 
-   **V2 (tem .harness/):**
-   - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
-   - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
-
-   **V1 (legacy, sem .harness/):**
    - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
    - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
 
@@ -31,5 +26,5 @@ Prepara a workspace de um run e executa o Initializer Agent.
 
 - Toda a lógica de inicialização está em `runs/.meta/api/init-workspace.mjs`
 - O initializer (passo 4) é o LLM que gera `features.json` a partir dos PRPs
-- V2 cria estrutura `.harness/` com session isolada; V1 mantém artefatos no root
+- Cria estrutura `.harness/` com session isolada
 - Em caso de erro, mostre a mensagem da API ao usuário
