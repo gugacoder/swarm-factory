@@ -3,7 +3,7 @@
   "slug": "cia-angular-improvements--cc",
   "name": "CiaPrimeCare UI Refactoring",
   "description": null,
-  "specs": "../PROMPT.md",
+  "specs": "D:/sources/codr.studio/cia-prime-care/CiaPrimeCare/CiaAngular/src/app/hub/escalas/PROMPT.md",
   "workspace": "D:/sources/codr.studio/cia-prime-care/CiaPrimeCare/CiaAngular",
   "agent": {
     "harness": "claude-code",
