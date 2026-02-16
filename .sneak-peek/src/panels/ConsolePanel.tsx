@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePolling } from '@/hooks/usePolling'
+import { useWorkspace } from '@/hooks/useWorkspace'
 import { fetchSessions, fetchSessionOutput } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { JsonlEvent, JsonlContent, JsonlToolResult, SessionOutput } from '@/lib/types'
@@ -65,7 +66,9 @@ function groupEventsToDisplayItems(events: JsonlEvent[]): DisplayItem[] {
 }
 
 export function ConsolePanel() {
-  const { data: sessionsData } = usePolling({ fetcher: fetchSessions, interval: 5_000 })
+  const { slug } = useWorkspace()
+  const sessionsFetcher = useCallback(() => fetchSessions(slug ?? undefined), [slug])
+  const { data: sessionsData } = usePolling({ fetcher: sessionsFetcher, interval: 5_000 })
   const sessions = sessionsData?.sessions ?? []
 
   // Auto-detect most recent active session
@@ -84,9 +87,9 @@ export function ConsolePanel() {
     if (!sid) return
     const sinceByte = hasInitialRef.current ? lastBytesRef.current : undefined
     try {
-      const result = await fetchSessionOutput(sid, 100, sinceByte)
+      const result = await fetchSessionOutput(sid, 100, sinceByte, slug ?? undefined)
       if (hasInitialRef.current && result.append === false) {
-        const full = await fetchSessionOutput(sid, 100)
+        const full = await fetchSessionOutput(sid, 100, undefined, slug ?? undefined)
         setOutput(full)
         lastBytesRef.current = full.total_bytes
       } else if (result.append && hasInitialRef.current && result.events.length > 0) {
@@ -103,7 +106,7 @@ export function ConsolePanel() {
         hasInitialRef.current = true
       }
     } catch { /* silent */ }
-  }, [sid])
+  }, [sid, slug])
 
   useEffect(() => {
     hasInitialRef.current = false

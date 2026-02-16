@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Outlet } from 'react-router-dom'
 import { WorkspaceContext, useWorkspaceProvider } from '@/hooks/useWorkspace'
 import { StatusBar } from '@/components/StatusBar'
 import { FeaturesPanel } from '@/panels/FeaturesPanel'
@@ -7,15 +7,17 @@ import { SessionsPanel } from '@/panels/SessionsPanel'
 import { ConsolePanel } from '@/panels/ConsolePanel'
 import { PromptPanel } from '@/panels/PromptPanel'
 import { ProgressPanel } from '@/panels/ProgressPanel'
-import { CreateHarnessPanel } from '@/panels/CreateHarnessPanel'
+import { ManagePanel } from '@/panels/ManagePanel'
+import { CreateRunPanel } from '@/panels/CreateRunPanel'
+import { fetchWorkspaces } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
-type Tab = 'features' | 'sessions' | 'console' | 'specs' | 'progress'
+type Tab = 'features' | 'sessions' | 'console' | 'specs' | 'progress' | 'manage'
 
-const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
+const TABS: { id: Tab; pathFn: (slug: string) => string; label: string; icon: JSX.Element }[] = [
   {
     id: 'features',
-    path: '/features',
+    pathFn: (slug) => `/features/${slug}`,
     label: 'Features',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -25,7 +27,7 @@ const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
   },
   {
     id: 'sessions',
-    path: '/sessions',
+    pathFn: (slug) => `/sessions/${slug}`,
     label: 'Sessions',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,7 +37,7 @@ const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
   },
   {
     id: 'console',
-    path: '/console',
+    pathFn: (slug) => `/console/${slug}`,
     label: 'Console',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,7 +47,7 @@ const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
   },
   {
     id: 'specs',
-    path: '/specs',
+    pathFn: (slug) => `/specs/${slug}`,
     label: 'Specs',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +57,7 @@ const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
   },
   {
     id: 'progress',
-    path: '/progress',
+    pathFn: (slug) => `/progress/${slug}`,
     label: 'Progress',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -63,62 +65,168 @@ const TABS: { id: Tab; path: string; label: string; icon: JSX.Element }[] = [
       </svg>
     ),
   },
+  {
+    id: 'manage',
+    pathFn: (slug) => `/runs/${slug}/manage`,
+    label: 'Gerenciar',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    ),
+  },
 ]
 
 function activeTabFromPath(pathname: string): Tab | null {
-  if (pathname.startsWith('/sessions')) return 'sessions'
-  if (pathname.startsWith('/console')) return 'console'
-  if (pathname.startsWith('/specs')) return 'specs'
-  if (pathname.startsWith('/progress')) return 'progress'
-  if (pathname.startsWith('/create')) return null
-  return 'features'
+  if (pathname.startsWith('/sessions/')) return 'sessions'
+  if (pathname.startsWith('/console/')) return 'console'
+  if (pathname.startsWith('/specs/')) return 'specs'
+  if (pathname.startsWith('/progress/')) return 'progress'
+  if (pathname.match(/^\/runs\/[^/]+\/manage/)) return 'manage'
+  if (pathname.startsWith('/runs/new')) return null
+  if (pathname.startsWith('/features/')) return 'features'
+  return null
 }
 
-export default function App() {
-  const [refreshKey, setRefreshKey] = useState(0)
-  const workspace = useWorkspaceProvider(refreshKey)
-  const navigate = useNavigate()
-  const location = useLocation()
-  const activeTab = activeTabFromPath(location.pathname)
+function extractSlugFromPath(pathname: string): string | null {
+  // /features/{slug}, /sessions/{slug}, /console/{slug}, /progress/{slug}
+  const simpleMatch = pathname.match(/^\/(features|sessions|console|progress|specs)\/([^/]+)/)
+  if (simpleMatch) return simpleMatch[2]
+  // /runs/{slug}/manage
+  const runsMatch = pathname.match(/^\/runs\/([^/]+)\/manage/)
+  if (runsMatch) return runsMatch[1]
+  return null
+}
 
-  const handleWorkspaceChange = useCallback(() => {
-    setRefreshKey(k => k + 1)
-  }, [])
+// --- SlugLayout: wraps slug-based routes with WorkspaceContext ---
+function SlugLayout() {
+  const { slug } = useParams<{ slug: string }>()
+  const workspace = useWorkspaceProvider(slug ?? null)
 
   return (
     <WorkspaceContext.Provider value={workspace}>
+      <Outlet />
+    </WorkspaceContext.Provider>
+  )
+}
+
+// --- ManageSlugLayout: for /runs/:slug/manage ---
+function ManageSlugLayout() {
+  const { slug } = useParams<{ slug: string }>()
+  const workspace = useWorkspaceProvider(slug ?? null)
+
+  return (
+    <WorkspaceContext.Provider value={workspace}>
+      <Outlet />
+    </WorkspaceContext.Provider>
+  )
+}
+
+// --- HomeRedirect: fetch workspaces and redirect to first slug ---
+function HomeRedirect() {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchWorkspaces().then(data => {
+      if (data.workspaces.length > 0) {
+        navigate(`/features/${data.workspaces[0].slug}`, { replace: true })
+      } else {
+        navigate('/runs/new', { replace: true })
+      }
+      setLoading(false)
+    }).catch(() => {
+      navigate('/runs/new', { replace: true })
+      setLoading(false)
+    })
+  }, [navigate])
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-muted-foreground text-sm">
+        Carregando workspaces...
+      </div>
+    )
+  }
+  return null
+}
+
+export default function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const activeTab = activeTabFromPath(location.pathname)
+  const currentSlug = extractSlugFromPath(location.pathname)
+
+  // Derive workspace context for the status bar from the current slug
+  const statusBarWorkspace = useWorkspaceProvider(currentSlug)
+
+  return (
+    <WorkspaceContext.Provider value={statusBarWorkspace}>
       <div className="h-screen flex flex-col overflow-hidden">
-        <StatusBar onWorkspaceChange={handleWorkspaceChange} />
+        <StatusBar />
 
-        {/* Tab bar */}
-        <div className="flex items-center border-b border-border bg-card px-2 overflow-x-auto shrink-0">
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => navigate(tab.path)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors',
-                activeTab === tab.id
-                  ? 'border-primary text-foreground font-medium'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {tab.icon}
-              <span className="hidden sm:inline">{tab.label}</span>
-            </button>
-          ))}
-        </div>
+        {/* Tab bar — only shown when there's a slug */}
+        {currentSlug && (
+          <div className="flex items-center border-b border-border bg-card px-2 overflow-x-auto shrink-0">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => navigate(tab.pathFn(currentSlug))}
+                className={cn(
+                  'flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors',
+                  activeTab === tab.id
+                    ? 'border-primary text-foreground font-medium'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Panel content — key forces remount on workspace change */}
-        <div className="flex-1 min-h-0 overflow-hidden relative" key={refreshKey}>
+        {/* Panel content */}
+        <div className="flex-1 min-h-0 overflow-hidden relative">
           <Routes>
-            <Route path="/features" element={<FeaturesPanel />} />
-            <Route path="/sessions/:sid?" element={<SessionsPanel />} />
-            <Route path="/console" element={<ConsolePanel />} />
-            <Route path="/specs/*" element={<PromptPanel />} />
-            <Route path="/progress" element={<ProgressPanel />} />
-            <Route path="/create" element={<CreateHarnessPanel onWorkspaceChange={handleWorkspaceChange} />} />
-            <Route path="*" element={<Navigate to="/features" replace />} />
+            {/* Home redirect */}
+            <Route path="/" element={<HomeRedirect />} />
+
+            {/* Create new run */}
+            <Route path="/runs/new" element={<CreateRunPanel />} />
+
+            {/* Manage page */}
+            <Route path="/runs/:slug/manage" element={<ManageSlugLayout />}>
+              <Route index element={<ManagePanel />} />
+            </Route>
+
+            {/* Slug-based panels */}
+            <Route path="/features/:slug" element={<SlugLayout />}>
+              <Route index element={<FeaturesPanel />} />
+            </Route>
+            <Route path="/sessions/:slug/:sid?" element={<SlugLayout />}>
+              <Route index element={<SessionsPanel />} />
+            </Route>
+            <Route path="/console/:slug" element={<SlugLayout />}>
+              <Route index element={<ConsolePanel />} />
+            </Route>
+            <Route path="/specs/:slug/*" element={<SlugLayout />}>
+              <Route path="*" element={<PromptPanel />} />
+            </Route>
+            <Route path="/progress/:slug" element={<SlugLayout />}>
+              <Route index element={<ProgressPanel />} />
+            </Route>
+
+            {/* Legacy routes redirect to home */}
+            <Route path="/features" element={<Navigate to="/" replace />} />
+            <Route path="/sessions" element={<Navigate to="/" replace />} />
+            <Route path="/console" element={<Navigate to="/" replace />} />
+            <Route path="/specs" element={<Navigate to="/" replace />} />
+            <Route path="/progress" element={<Navigate to="/" replace />} />
+
+            {/* Catch-all */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>

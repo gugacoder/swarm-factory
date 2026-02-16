@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { usePolling } from '@/hooks/usePolling'
+import { useWorkspace } from '@/hooks/useWorkspace'
 import { fetchSessions, fetchSessionOutput } from '@/lib/api'
 import { ProcessBadge } from '@/components/ProcessBadge'
 import { cn } from '@/lib/utils'
@@ -215,9 +216,13 @@ function OutputViewer({ events }: { events: JsonlEvent[] }) {
 
 // --- Main Panel ---
 export function SessionsPanel() {
-  const { sid: routeSid } = useParams<{ sid?: string }>()
+  const { slug, sid: routeSid } = useParams<{ slug: string; sid?: string }>()
   const navigate = useNavigate()
-  const { data: sessionsData } = usePolling({ fetcher: fetchSessions, interval: 5_000 })
+  const { slug: wsSlug } = useWorkspace()
+  const currentSlug = wsSlug ?? slug ?? null
+
+  const sessionsFetcher = useCallback(() => fetchSessions(currentSlug ?? undefined), [currentSlug])
+  const { data: sessionsData } = usePolling({ fetcher: sessionsFetcher, interval: 5_000 })
   const sessions = sessionsData?.sessions ?? []
   const [selectedId, setSelectedId] = useState<string | null>(routeSid ?? null)
   const [output, setOutput] = useState<SessionOutput | null>(null)
@@ -234,11 +239,11 @@ export function SessionsPanel() {
   useEffect(() => {
     if (selectedId || sessions.length === 0) return
     const current = sessions.find(s => s.is_current) ?? sessions[0]
-    if (current) {
+    if (current && slug) {
       setSelectedId(current.id)
-      navigate(`/sessions/${current.id}`, { replace: true })
+      navigate(`/sessions/${slug}/${current.id}`, { replace: true })
     }
-  }, [sessions, selectedId, navigate])
+  }, [sessions, selectedId, navigate, slug])
 
   const selectedSession = sessions.find(s => s.id === selectedId)
 
@@ -246,10 +251,9 @@ export function SessionsPanel() {
     if (!selectedId) return
     const sinceByte = hasInitialRef.current ? lastBytesRef.current : undefined
     try {
-      const result = await fetchSessionOutput(selectedId, 100, sinceByte)
+      const result = await fetchSessionOutput(selectedId, 100, sinceByte, currentSlug ?? undefined)
       if (hasInitialRef.current && result.append === false) {
-        // File truncated — full refetch
-        const full = await fetchSessionOutput(selectedId, 100)
+        const full = await fetchSessionOutput(selectedId, 100, undefined, currentSlug ?? undefined)
         setOutput(full)
         lastBytesRef.current = full.total_bytes
       } else if (result.append && hasInitialRef.current && result.events.length > 0) {
@@ -266,7 +270,7 @@ export function SessionsPanel() {
         hasInitialRef.current = true
       }
     } catch { /* silent */ }
-  }, [selectedId])
+  }, [selectedId, currentSlug])
 
   useEffect(() => {
     hasInitialRef.current = false
@@ -295,7 +299,7 @@ export function SessionsPanel() {
           {sessions.map(s => (
             <button
               key={s.id}
-              onClick={() => { setSelectedId(s.id); navigate(`/sessions/${s.id}`) }}
+              onClick={() => { setSelectedId(s.id); if (slug) navigate(`/sessions/${slug}/${s.id}`) }}
               className={cn(
                 'w-full text-left px-3 py-2.5 text-xs transition-colors',
                 selectedId === s.id ? 'bg-muted' : 'hover:bg-muted/30'
@@ -308,6 +312,14 @@ export function SessionsPanel() {
               </div>
               <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                 <span>{formatDuration(s.started_at, s.finished_at)}</span>
+                {s.exit_code != null && (
+                  <span className={s.exit_code === 0 ? 'text-green-500' : 'text-red-400'}>
+                    exit:{s.exit_code}
+                  </span>
+                )}
+                {s.retries != null && s.retries > 0 && (
+                  <span className="text-amber-400">{s.retries}r</span>
+                )}
                 <span className="ml-auto">{formatBytes(s.output_bytes)}</span>
               </div>
               {s.metrics && (

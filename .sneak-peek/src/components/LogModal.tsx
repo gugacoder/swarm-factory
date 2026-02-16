@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useWorkspace } from '@/hooks/useWorkspace'
 import { fetchSessions, fetchSessionOutput } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { JsonlEvent, JsonlContent, JsonlToolResult, SessionOutput } from '@/lib/types'
@@ -56,6 +57,7 @@ function groupEvents(events: JsonlEvent[]): DisplayItem[] {
 }
 
 export function LogModal({ onClose }: { onClose: () => void }) {
+  const { slug } = useWorkspace()
   const [output, setOutput] = useState<SessionOutput | null>(null)
   const [sid, setSid] = useState<string | null>(null)
   const [alive, setAlive] = useState(false)
@@ -67,7 +69,7 @@ export function LogModal({ onClose }: { onClose: () => void }) {
 
   // Detect active session
   useEffect(() => {
-    fetchSessions().then(data => {
+    fetchSessions(slug ?? undefined).then(data => {
       const sessions = data.sessions
       const active = sessions.find(s => s.alive && s.is_current) ?? sessions.find(s => s.is_current) ?? sessions[sessions.length - 1]
       if (active) {
@@ -75,15 +77,15 @@ export function LogModal({ onClose }: { onClose: () => void }) {
         setAlive(active.alive)
       }
     }).catch(() => {})
-  }, [])
+  }, [slug])
 
   const loadOutput = useCallback(async () => {
     if (!sid) return
     const sinceByte = hasInitialRef.current ? lastBytesRef.current : undefined
     try {
-      const result = await fetchSessionOutput(sid, 100, sinceByte)
+      const result = await fetchSessionOutput(sid, 100, sinceByte, slug ?? undefined)
       if (hasInitialRef.current && result.append === false) {
-        const full = await fetchSessionOutput(sid, 100)
+        const full = await fetchSessionOutput(sid, 100, undefined, slug ?? undefined)
         setOutput(full)
         lastBytesRef.current = full.total_bytes
       } else if (result.append && hasInitialRef.current && result.events.length > 0) {
@@ -100,7 +102,7 @@ export function LogModal({ onClose }: { onClose: () => void }) {
         hasInitialRef.current = true
       }
     } catch { /* silent */ }
-  }, [sid])
+  }, [sid, slug])
 
   useEffect(() => {
     if (!sid) return

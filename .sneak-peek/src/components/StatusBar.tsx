@@ -5,8 +5,8 @@ import { ProgressBar } from './ProgressBar'
 import { ThemeSwitcher } from './ThemeSwitcher'
 import { useTheme } from '@/hooks/useTheme'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { fetchWorkspaces, switchWorkspace, harnessStart, harnessStop } from '@/lib/api'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { fetchWorkspaces, harnessStart, harnessStop } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { WorkspaceInfo } from '@/lib/types'
 
@@ -30,19 +30,18 @@ function ElapsedTime({ since }: { since: string }) {
   return <span className="text-xs font-mono text-muted-foreground">{elapsed}</span>
 }
 
-function WorkspaceSelector({ onSwitch }: { onSwitch: () => void }) {
-  const { config } = useWorkspace()
+function WorkspaceSelector() {
+  const { slug: currentSlug, config } = useWorkspace()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [open, setOpen] = useState(false)
   const [workspaces, setWorkspaces] = useState<WorkspaceInfo[]>([])
-  const [active, setActive] = useState('')
-  const [loading, setLoading] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
     try {
       const data = await fetchWorkspaces()
       setWorkspaces(data.workspaces)
-      setActive(data.active)
     } catch { /* silent */ }
   }, [])
 
@@ -60,26 +59,37 @@ function WorkspaceSelector({ onSwitch }: { onSwitch: () => void }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const handleSelect = async (ws: WorkspaceInfo) => {
-    if (ws.workspace === active) { setOpen(false); return }
-    setLoading(true)
-    try {
-      await switchWorkspace(ws.workspace)
-      setActive(ws.workspace)
-      setOpen(false)
-      onSwitch()
-    } catch { /* silent */ }
-    setLoading(false)
+  const handleSelect = (ws: WorkspaceInfo) => {
+    if (ws.slug === currentSlug) { setOpen(false); return }
+    setOpen(false)
+
+    // Navigate to same panel type but with new slug
+    const pathname = location.pathname
+    // Detect current panel
+    const panelMatch = pathname.match(/^\/(features|sessions|console|specs|progress)\//)
+    const manageMatch = pathname.match(/^\/runs\/[^/]+\/manage/)
+    if (manageMatch) {
+      navigate(`/runs/${ws.slug}/manage`)
+    } else if (panelMatch) {
+      navigate(`/${panelMatch[1]}/${ws.slug}`)
+    } else {
+      navigate(`/features/${ws.slug}`)
+    }
   }
+
+  const displayName = config?.project ?? currentSlug ?? 'Carregando...'
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 font-semibold text-sm hover:text-primary transition-colors max-w-[240px]"
-        title={config?.name ?? ''}
+        className="flex items-center gap-1.5 font-semibold text-sm hover:text-primary transition-colors max-w-[280px]"
+        title={displayName}
       >
-        <span className="truncate">{config?.name ?? 'Carregando...'}</span>
+        <span className="truncate">{displayName}</span>
+        {currentSlug && (
+          <span className="text-[10px] font-mono text-muted-foreground ml-1">({currentSlug})</span>
+        )}
         <svg className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
@@ -92,22 +102,21 @@ function WorkspaceSelector({ onSwitch }: { onSwitch: () => void }) {
           </div>
           <div className="max-h-[300px] overflow-auto">
             {workspaces.map(ws => {
-              const isCurrent = ws.workspace === active
+              const isCurrent = ws.slug === currentSlug
               const pct = ws.features.total > 0 ? Math.round((ws.features.passing / ws.features.total) * 100) : 0
               return (
                 <button
                   key={ws.slug}
                   onClick={() => handleSelect(ws)}
-                  disabled={loading}
                   className={cn(
                     'w-full text-left px-3 py-2.5 text-sm transition-colors border-b border-border/50 last:border-0',
-                    isCurrent ? 'bg-primary/10' : 'hover:bg-muted/50',
-                    loading && 'opacity-50'
+                    isCurrent ? 'bg-primary/10' : 'hover:bg-muted/50'
                   )}
                 >
                   <div className="flex items-center gap-2">
                     {isCurrent && <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
                     <span className={cn('font-medium truncate', isCurrent && 'text-primary')}>{ws.name}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground ml-1">{ws.slug}</span>
                     <span className="ml-auto text-xs font-mono text-muted-foreground whitespace-nowrap">
                       {ws.features.passing}/{ws.features.total}
                     </span>
@@ -139,8 +148,8 @@ function CreateHarnessButton() {
   const navigate = useNavigate()
   return (
     <button
-      onClick={() => navigate('/create')}
-      title="Novo Harness"
+      onClick={() => navigate('/runs/new')}
+      title="Novo Run"
       className="flex items-center justify-center w-6 h-6 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
     >
       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -150,24 +159,18 @@ function CreateHarnessButton() {
   )
 }
 
-function LoopControls({ workspace, alive, onAction }: { workspace: string; alive: boolean; onAction: () => void }) {
+function LoopControls({ slug, alive }: { slug: string; alive: boolean }) {
   const [acting, setActing] = useState(false)
 
   const handleStart = async () => {
     setActing(true)
-    try {
-      await harnessStart(workspace)
-      onAction()
-    } catch { /* silent */ }
+    try { await harnessStart(slug) } catch { /* silent */ }
     setActing(false)
   }
 
   const handleStop = async () => {
     setActing(true)
-    try {
-      await harnessStop(workspace)
-      onAction()
-    } catch { /* silent */ }
+    try { await harnessStop(slug) } catch { /* silent */ }
     setActing(false)
   }
 
@@ -196,8 +199,8 @@ function LoopControls({ workspace, alive, onAction }: { workspace: string; alive
   )
 }
 
-export function StatusBar({ onWorkspaceChange }: { onWorkspaceChange: () => void }) {
-  const { state, stateDetail, pid, alive, features, summary, total, config } = useWorkspace()
+export function StatusBar() {
+  const { slug, state, stateDetail, pid, alive, features, summary, total } = useWorkspace()
   const { theme, setTheme } = useTheme()
 
   const passing = summary.passing ?? 0
@@ -205,7 +208,7 @@ export function StatusBar({ onWorkspaceChange }: { onWorkspaceChange: () => void
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 border-b border-border bg-card shrink-0 flex-wrap">
-      <WorkspaceSelector onSwitch={onWorkspaceChange} />
+      <WorkspaceSelector />
       <CreateHarnessButton />
 
       <LoopStateBadge state={state} />
@@ -238,8 +241,8 @@ export function StatusBar({ onWorkspaceChange }: { onWorkspaceChange: () => void
         </>
       )}
 
-      {config?.workspace && (
-        <LoopControls workspace={config.workspace} alive={alive} onAction={onWorkspaceChange} />
+      {slug && (
+        <LoopControls slug={slug} alive={alive} />
       )}
 
       <div className="ml-auto">

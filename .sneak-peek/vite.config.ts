@@ -4,7 +4,7 @@ import path from 'path'
 import { sneakPeekPlugin } from './src/plugin'
 
 const workspace = path.resolve(__dirname, '..')
-const runsDir = path.resolve(workspace, '../..')
+const runsDir = path.resolve(workspace, 'runs')
 
 export default defineConfig({
   plugins: [react(), sneakPeekPlugin(workspace, runsDir)],

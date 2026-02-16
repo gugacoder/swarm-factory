@@ -1,22 +1,17 @@
-// --- Harness Config (agent-harness.json) ---
+// --- Harness Config (.harness/{session}/config.json) ---
 export interface HarnessConfig {
-  _version: number
   slug: string
-  name: string
+  project: string
+  session_name: string
   specs: string
-  workspace: string
   agent: {
     harness: string
+    model: string
     max_turns: number
+    max_iterations: number
     max_retries: number
+    rollback: boolean
   }
-  artifacts: Record<string, string>
-  session_template: {
-    pattern: string
-    files: string[]
-    dirs: string[]
-  }
-  notifications: any[]
 }
 
 // --- Feature ---
@@ -50,9 +45,12 @@ export interface LoopStateDetail {
   started_at: string
   updated_at: string
   exit_reason: string
+  pid: number | null
+  max_features: number | null
+  features_done: number | null
 }
 
-// --- Session ---
+// --- Session (Feature Run) ---
 export interface SessionSummary {
   id: string
   pid: number | null
@@ -62,6 +60,8 @@ export interface SessionSummary {
   output_bytes: number
   is_current: boolean
   metrics: SessionMetrics | null
+  exit_code: number | null
+  retries: number | null
 }
 
 export interface SessionMetrics {
@@ -127,6 +127,16 @@ export interface WorkspaceInfo {
   workspace: string
   harness: string
   features: { total: number; passing: number }
+  activeSession: string
+}
+
+// --- Harness Session Info ---
+export interface HarnessSessionInfo {
+  name: string
+  isActive: boolean
+  hasFeatures: boolean
+  featuresCount: number
+  featuresPassingCount: number
 }
 
 // --- Harness Create Flow ---
@@ -154,12 +164,6 @@ export interface HarnessCreateResponse {
   artifacts_created?: string[]
 }
 
-export interface HarnessSetupResponse {
-  success: boolean
-  output?: string
-  exitCode?: number
-}
-
 export interface HarnessStartResponse {
   pid: number
   workspace: string
@@ -170,4 +174,12 @@ export interface HarnessStartResponse {
 export interface HarnessStopResponse {
   success: boolean
   workspace: string
+  pid: number | null
+  signalSent: boolean
 }
+
+// --- SSE Stream Events ---
+export type StreamEvent =
+  | { type: 'log'; text: string }
+  | { type: 'done'; exitCode: number }
+  | { type: 'error'; error: string }

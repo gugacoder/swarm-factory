@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useWorkspace } from '@/hooks/useWorkspace'
 import { fetchSpecs } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { SpecsResponse, SpecsItem } from '@/lib/types'
@@ -12,7 +13,7 @@ function FileViewer({ content }: { content: string }) {
   )
 }
 
-function FileTree({ items, onSelect, selectedPath }: { items: SpecsItem[]; onSelect: (path: string) => void; selectedPath: string | null }) {
+function FileTree({ items, onSelect, selectedPath, slug }: { items: SpecsItem[]; onSelect: (path: string) => void; selectedPath: string | null; slug?: string }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
 
   const toggleDir = (dirPath: string) => {
@@ -41,7 +42,7 @@ function FileTree({ items, onSelect, selectedPath }: { items: SpecsItem[]; onSel
                 <span className="font-medium">{item.name}</span>
               </button>
               {!isCollapsed && (
-                <DirectoryContents parentPath={item.path} onSelect={onSelect} selectedPath={selectedPath} />
+                <DirectoryContents parentPath={item.path} onSelect={onSelect} selectedPath={selectedPath} slug={slug} />
               )}
             </div>
           )
@@ -66,24 +67,24 @@ function FileTree({ items, onSelect, selectedPath }: { items: SpecsItem[]; onSel
   )
 }
 
-function DirectoryContents({ parentPath, onSelect, selectedPath }: { parentPath: string; onSelect: (path: string) => void; selectedPath: string | null }) {
+function DirectoryContents({ parentPath, onSelect, selectedPath, slug }: { parentPath: string; onSelect: (path: string) => void; selectedPath: string | null; slug?: string }) {
   const [items, setItems] = useState<SpecsItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    fetchSpecs(parentPath).then(data => {
+    fetchSpecs(parentPath, slug).then(data => {
       if (cancelled) return
       if (data.type === 'directory') setItems(data.items)
       setLoading(false)
     }).catch(() => setLoading(false))
     return () => { cancelled = true }
-  }, [parentPath])
+  }, [parentPath, slug])
 
   if (loading) return <div className="pl-6 text-muted-foreground text-[10px]">...</div>
   return (
     <div className="pl-4">
-      <FileTree items={items} onSelect={onSelect} selectedPath={selectedPath} />
+      <FileTree items={items} onSelect={onSelect} selectedPath={selectedPath} slug={slug} />
     </div>
   )
 }
@@ -91,8 +92,13 @@ function DirectoryContents({ parentPath, onSelect, selectedPath }: { parentPath:
 export function PromptPanel() {
   const location = useLocation()
   const navigate = useNavigate()
-  // Extract sub-path from /specs/* — everything after /specs/
-  const routeFilePath = location.pathname.replace(/^\/specs\/?/, '') || null
+  const { slug } = useWorkspace()
+
+  // Route: /specs/{slug}/path/to/file — extract file path after /specs/{slug}/
+  const routeFilePath = (() => {
+    const match = location.pathname.match(/^\/specs\/[^/]+\/(.+)$/)
+    return match ? match[1] : null
+  })()
 
   const [root, setRoot] = useState<SpecsResponse | null>(null)
   const [selectedPath, setSelectedPath] = useState<string | null>(routeFilePath)
@@ -100,10 +106,10 @@ export function PromptPanel() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetchSpecs()
+    fetchSpecs(undefined, slug ?? undefined)
       .then(data => { setRoot(data); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [])
+  }, [slug])
 
   // Load file from route on mount if route has a path
   useEffect(() => {
@@ -114,14 +120,16 @@ export function PromptPanel() {
 
   const loadFile = useCallback(async (filePath: string) => {
     setSelectedPath(filePath)
-    navigate(`/specs/${filePath}`, { replace: true })
+    if (slug) {
+      navigate(`/specs/${slug}/${filePath}`, { replace: true })
+    }
     try {
-      const data = await fetchSpecs(filePath)
+      const data = await fetchSpecs(filePath, slug ?? undefined)
       if (data.type === 'file') setFileContent(data.content)
     } catch {
       setFileContent('Erro ao carregar arquivo')
     }
-  }, [navigate])
+  }, [navigate, slug])
 
   if (loading) {
     return <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">Carregando specs...</div>
@@ -141,7 +149,7 @@ export function PromptPanel() {
     <div className="flex h-full">
       {/* Tree */}
       <div className="w-[240px] shrink-0 border-r border-border overflow-auto p-2 bg-card">
-        <FileTree items={root.items} onSelect={loadFile} selectedPath={selectedPath} />
+        <FileTree items={root.items} onSelect={loadFile} selectedPath={selectedPath} slug={slug ?? undefined} />
       </div>
 
       {/* Viewer */}

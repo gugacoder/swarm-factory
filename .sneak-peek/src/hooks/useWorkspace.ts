@@ -4,6 +4,7 @@ import { fetchConfig, fetchState, fetchFeatures } from '@/lib/api'
 import type { HarnessConfig, Feature, LoopState, LoopStateDetail } from '@/lib/types'
 
 interface WorkspaceData {
+  slug: string | null
   config: HarnessConfig | null
   state: LoopState
   stateDetail: LoopStateDetail | null
@@ -14,9 +15,13 @@ interface WorkspaceData {
   total: number
   loading: boolean
   error: Error | null
+  refreshState: () => void
 }
 
+const noop = () => {}
+
 const defaultValue: WorkspaceData = {
+  slug: null,
   config: null,
   state: 'idle',
   stateDetail: null,
@@ -27,6 +32,7 @@ const defaultValue: WorkspaceData = {
   total: 0,
   loading: true,
   error: null,
+  refreshState: noop,
 }
 
 export const WorkspaceContext = createContext<WorkspaceData>(defaultValue)
@@ -35,18 +41,18 @@ export function useWorkspace() {
   return useContext(WorkspaceContext)
 }
 
-export function useWorkspaceProvider(refreshKey: number) {
-  // refreshKey in dependency forces new fetcher → usePolling re-fetches
+export function useWorkspaceProvider(slug: string | null) {
+  // slug in dependency forces new fetcher → usePolling re-fetches
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const configFetcher = useCallback(() => fetchConfig(), [refreshKey])
+  const configFetcher = useCallback(() => fetchConfig(slug ?? undefined), [slug])
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const stateFetcher = useCallback(() => fetchState(), [refreshKey])
+  const stateFetcher = useCallback(() => fetchState(slug ?? undefined), [slug])
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const featuresFetcher = useCallback(() => fetchFeatures(), [refreshKey])
+  const featuresFetcher = useCallback(() => fetchFeatures(slug ?? undefined), [slug])
 
-  const configPoll = usePolling({ fetcher: configFetcher, interval: 30_000 })
-  const statePoll = usePolling({ fetcher: stateFetcher, interval: 3_000 })
-  const featuresPoll = usePolling({ fetcher: featuresFetcher, interval: 5_000 })
+  const configPoll = usePolling({ fetcher: configFetcher, interval: 30_000, enabled: !!slug })
+  const statePoll = usePolling({ fetcher: stateFetcher, interval: 3_000, enabled: !!slug })
+  const featuresPoll = usePolling({ fetcher: featuresFetcher, interval: 5_000, enabled: !!slug })
 
   const config = configPoll.data?.config ?? null
   const state = (statePoll.data?.state as LoopState) ?? 'idle'
@@ -57,10 +63,11 @@ export function useWorkspaceProvider(refreshKey: number) {
   const summary = featuresPoll.data?.summary ?? {}
   const total = featuresPoll.data?.total ?? 0
 
-  const loading = configPoll.loading || statePoll.loading || featuresPoll.loading
+  const loading = slug ? (configPoll.loading || statePoll.loading || featuresPoll.loading) : false
   const error = configPoll.error || statePoll.error || featuresPoll.error
 
   return {
+    slug,
     config,
     state,
     stateDetail,
@@ -71,5 +78,6 @@ export function useWorkspaceProvider(refreshKey: number) {
     total,
     loading,
     error,
+    refreshState: statePoll.refresh,
   }
 }

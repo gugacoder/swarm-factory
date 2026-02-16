@@ -28,7 +28,7 @@ test('cria um projeto via fluxo Novo Harness', async ({ page }) => {
         success: true,
         slug: body.slug,
         workspace: body.workspace,
-        artifacts_created: ['project.json', 'agent-harness.json'],
+        artifacts_created: ['project.json', '.harness/'],
       }),
     })
   })

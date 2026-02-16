@@ -1,12 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { usePolling } from '@/hooks/usePolling'
 import { fetchProgress } from '@/lib/api'
 import { useWorkspace } from '@/hooks/useWorkspace'
 
 export function ProgressPanel() {
-  const { alive } = useWorkspace()
+  const { slug, alive } = useWorkspace()
   const interval = alive ? 5_000 : 15_000
-  const { data } = usePolling({ fetcher: () => fetchProgress(500), interval })
+  const fetcher = useCallback(() => fetchProgress(500, slug ?? undefined), [slug])
+  const { data } = usePolling({ fetcher, interval })
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
