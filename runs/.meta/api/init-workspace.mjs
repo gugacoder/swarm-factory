@@ -74,7 +74,7 @@ async function ensureGitignoreEntry(workspace, entry) {
 /**
  * Inicializa o workspace de um projeto (V2 — estrutura .harness/).
  *
- * @param {string|object} pathOrOptions - path direto para project.json ou { slug, runsDir, session_name }
+ * @param {string|object} pathOrOptions - path direto para project.json ou { slug, runsDir, session_name, force }
  * @returns {Promise<object>} resultado com { workspace, session_name, config_path, artifacts_created }
  */
 export async function initWorkspace(pathOrOptions) {
@@ -248,6 +248,13 @@ async function initWorkspaceV1(project, workspace, harness) {
     await copyFile(harnessScriptSrc, harnessScriptDest);
   }
 
+  // Copiar setup-harness.mjs do template do harness
+  const setupScriptSrc = join(HARNESSES_DIR, harness, 'setup-harness.mjs');
+  const setupScriptDest = join(workspace, 'setup-harness.mjs');
+  if (await fileExists(setupScriptSrc)) {
+    await copyFile(setupScriptSrc, setupScriptDest);
+  }
+
   // Gerar commands do harness no workspace
   const commandsMap = {
     'claude-code': {
@@ -306,6 +313,7 @@ if (isMainModule) {
       slug:           { type: 'string' },
       'runs-dir':     { type: 'string' },
       'session-name': { type: 'string' },
+      force:          { type: 'boolean', default: false },
     },
     allowPositionals: true,
     strict: true,

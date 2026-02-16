@@ -26,6 +26,7 @@ const RUNS_DIR = resolve(__dirname, '..', '..');
  * @param {number} [params.max_retries=5] - Tentativas por feature
  * @param {string} [params.format='structured'] - Formato: flat ou structured
  * @param {string} [params.runsDir] - Diretório runs (default: auto-detectado)
+ * @param {boolean} [params.force=false] - Sobrescrever se já existir
  * @returns {Promise<object>} Objeto do projeto criado
  */
 export async function createProject(params) {
@@ -43,6 +44,7 @@ export async function createProject(params) {
     max_retries = 5,
     format = 'structured',
     runsDir = RUNS_DIR,
+    force = false,
   } = params;
 
   // Montar agent config
@@ -82,7 +84,9 @@ export async function createProject(params) {
   // Verificar se já existe
   try {
     await access(targetPath);
-    throw new Error(`Projeto já existe em ${targetPath}. Use outro slug ou remova o existente.`);
+    if (!force) {
+      throw new Error(`Projeto já existe em ${targetPath}. Use outro slug ou remova o existente.`);
+    }
   } catch (err) {
     if (err.code !== 'ENOENT') throw err;
   }
@@ -117,6 +121,7 @@ if (isMainModule) {
       'max-features':  { type: 'string' },
       'max-retries':   { type: 'string' },
       format:          { type: 'string' },
+      force:           { type: 'boolean', default: false },
     },
     strict: true,
   });
@@ -131,6 +136,7 @@ if (isMainModule) {
     format: values.format,
   };
 
+  if (values.force) params.force = true;
   if (values.description !== undefined) params.description = values.description;
   if (values.model !== undefined) params.model = values.model;
   if (values['max-turns'] !== undefined) params.max_turns = parseInt(values['max-turns'], 10);
