@@ -3,8 +3,6 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join, isAbsolute } from 'node:path';
 import { parseArgs } from 'node:util';
 import { loadProject } from './load-project.mjs';
-import { getDefaultSessionTemplate, ensureArtifactDirs, resolveSessionArtifacts } from '../lib/artifacts.mjs';
-import { resolveArtifacts } from '../lib/paths.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -72,9 +70,9 @@ async function ensureGitignoreEntry(workspace, entry) {
 }
 
 /**
- * Inicializa o workspace de um projeto (V2 — estrutura .harness/).
+ * Inicializa o workspace de um projeto — cria estrutura .harness/.
  *
- * @param {string|object} pathOrOptions - path direto para project.json ou { slug, runsDir, session_name, force }
+ * @param {string|object} pathOrOptions - path direto para project.json ou { slug, runsDir, session_name }
  * @returns {Promise<object>} resultado com { workspace, session_name, config_path, artifacts_created }
  */
 export async function initWorkspace(pathOrOptions) {
@@ -82,34 +80,18 @@ export async function initWorkspace(pathOrOptions) {
   const project = await loadProject(pathOrOptions);
   const workspace = resolve(project.workspace);
   const harness = project.agent.harness;
-  const version = project.version;
 
   // 2. Extrair session_name
   let sessionName;
   if (typeof pathOrOptions === 'object' && pathOrOptions.session_name) {
     sessionName = pathOrOptions.session_name;
   } else {
-    // Derivar do slug: "agiliza-08-precificacao-cc" → "08-precificacao"
-    // Ou usar o milestone se disponível no projeto
     sessionName = project.slug;
   }
 
   // 3. Criar workspace se não existir
   await mkdir(workspace, { recursive: true });
 
-  // 4. Determinar se é V1 ou V2 com base na versão
-  if (version >= 2) {
-    return await initWorkspaceV2(project, workspace, harness, sessionName);
-  }
-
-  // V1 — manter backward compat
-  return await initWorkspaceV1(project, workspace, harness);
-}
-
-/**
- * Inicialização V2 — estrutura .harness/.
- */
-async function initWorkspaceV2(project, workspace, harness, sessionName) {
   const harnessDir = join(workspace, '.harness');
   const scriptsDir = join(harnessDir, 'scripts');
   const sessionDir = join(harnessDir, sessionName);
@@ -169,7 +151,7 @@ async function initWorkspaceV2(project, workspace, harness, sessionName) {
   // 4e. Escrever .harness/active
   await writeFile(join(harnessDir, 'active'), sessionName + '\n', 'utf8');
 
-  // 4f. Copiar commands do harness no workspace (initialize.md para usar com slash commands)
+  // 4f. Copiar commands do harness no workspace
   const commandsMap = {
     'claude-code': {
       src: join(HARNESSES_DIR, 'claude-code', 'templates'),
@@ -218,91 +200,6 @@ async function initWorkspaceV2(project, workspace, harness, sessionName) {
   };
 }
 
-/**
- * Inicialização V1 — backward compat (estrutura flat no root).
- */
-async function initWorkspaceV1(project, workspace, harness) {
-  const version = project.version;
-  const resolvedArtifacts = resolveArtifacts(workspace, project.artifacts);
-  const sessionTemplate = getDefaultSessionTemplate(version);
-
-  const harnessJson = {
-    _version: version,
-    slug: project.slug,
-    name: project.name,
-    specs: project._resolved.specs,
-    workspace,
-    agent: { ...project.agent },
-    artifacts: resolvedArtifacts,
-    session_template: sessionTemplate,
-    notifications: [],
-  };
-
-  const harnessJsonPath = join(workspace, 'agent-harness.json');
-  await writeFile(harnessJsonPath, JSON.stringify(harnessJson, null, 2) + '\n', 'utf8');
-
-  // Copiar agent-harness.mjs do template do harness
-  const harnessScriptSrc = join(HARNESSES_DIR, harness, 'agent-harness.mjs');
-  const harnessScriptDest = join(workspace, 'agent-harness.mjs');
-  if (await fileExists(harnessScriptSrc)) {
-    await copyFile(harnessScriptSrc, harnessScriptDest);
-  }
-
-  // Copiar setup-harness.mjs do template do harness
-  const setupScriptSrc = join(HARNESSES_DIR, harness, 'setup-harness.mjs');
-  const setupScriptDest = join(workspace, 'setup-harness.mjs');
-  if (await fileExists(setupScriptSrc)) {
-    await copyFile(setupScriptSrc, setupScriptDest);
-  }
-
-  // Gerar commands do harness no workspace
-  const commandsMap = {
-    'claude-code': {
-      src: join(HARNESSES_DIR, 'claude-code', 'templates'),
-      dest: join(workspace, '.claude', 'commands', 'vibe'),
-    },
-    'opencode': {
-      src: join(HARNESSES_DIR, 'opencode'),
-      dest: join(workspace, '.opencode', 'commands'),
-    },
-    'codex': {
-      src: join(HARNESSES_DIR, 'codex', 'templates'),
-      dest: join(workspace, '.claude', 'commands', 'vibe'),
-    },
-  };
-
-  const commandsConfig = commandsMap[harness];
-  if (commandsConfig && await fileExists(commandsConfig.src)) {
-    await copyDirRecursive(commandsConfig.src, commandsConfig.dest);
-  }
-
-  // Criar diretórios de artefatos
-  await ensureArtifactDirs(workspace, project.artifacts);
-
-  // Criar .sessions/.current-milestone
-  const sessionsDir = join(workspace, '.sessions');
-  await mkdir(sessionsDir, { recursive: true });
-  await writeFile(join(sessionsDir, '.current-milestone'), project.slug + '\n', 'utf8');
-
-  // Adicionar .sessions/ ao .gitignore
-  await ensureGitignoreEntry(workspace, '.sessions/');
-
-  // Criar agent-progress.txt vazio se não existir
-  const progressPath = join(workspace, 'agent-progress.txt');
-  if (!await fileExists(progressPath)) {
-    await writeFile(progressPath, '', 'utf8');
-  }
-
-  return {
-    workspace,
-    harness_json_path: harnessJsonPath,
-    slug: project.slug,
-    name: project.name,
-    harness,
-    artifacts_created: Object.keys(resolvedArtifacts),
-  };
-}
-
 // --- CLI ---
 const isMainModule = process.argv[1] &&
   resolve(process.argv[1]) === __filename;
@@ -313,7 +210,6 @@ if (isMainModule) {
       slug:           { type: 'string' },
       'runs-dir':     { type: 'string' },
       'session-name': { type: 'string' },
-      force:          { type: 'boolean', default: false },
     },
     allowPositionals: true,
     strict: true,

@@ -6,7 +6,6 @@ import { execSync } from 'node:child_process';
 import { platform } from 'node:os';
 import { loadProject } from './load-project.mjs';
 import { validateFeatures } from '../lib/validate.mjs';
-import { readArtifact } from '../lib/artifacts.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,11 +50,11 @@ function isPidRunning(pid) {
 }
 
 /**
- * Tenta ler features e loop state da estrutura V2 (.harness/).
+ * Lê features e loop state da estrutura .harness/.
  * @param {string} workspace
- * @returns {Promise<{version: number, features: string|null, loopState: object|null, session: string|null}|null>}
+ * @returns {Promise<{features: string|null, loopState: object|null, session: string|null}|null>}
  */
-async function readV2Artifacts(workspace) {
+async function readHarnessArtifacts(workspace) {
   const harnessDir = join(workspace, '.harness');
   const activePath = join(harnessDir, 'active');
 
@@ -85,7 +84,7 @@ async function readV2Artifacts(workspace) {
     } catch { /* ignore */ }
   }
 
-  return { version: 2, features: featuresContent, loopState, session };
+  return { features: featuresContent, loopState, session };
 }
 
 /**
@@ -113,51 +112,23 @@ export async function getStatus(pathOrOptions) {
     };
   }
 
-  // 3. Tentar V2 primeiro, fallback para V1
-  const v2 = await readV2Artifacts(workspace);
+  // 3. Ler artefatos do .harness/
+  const harness = await readHarnessArtifacts(workspace);
 
-  let featuresContent;
+  let featuresContent = harness?.features ?? null;
   let loopPid = null;
   let loopActive = false;
   let loopIteration = null;
   let loopStartedAt = null;
 
-  if (v2) {
-    // V2 — ler de .harness/{session}/
-    featuresContent = v2.features;
-
-    if (v2.loopState) {
-      const pid = v2.loopState.pid;
-      if (pid && isPidRunning(pid)) {
-        loopActive = true;
-        loopPid = pid;
-      }
-      loopIteration = v2.loopState.iteration ?? null;
-      loopStartedAt = v2.loopState.started_at ?? null;
+  if (harness?.loopState) {
+    const pid = harness.loopState.pid;
+    if (pid && isPidRunning(pid)) {
+      loopActive = true;
+      loopPid = pid;
     }
-  } else {
-    // V1 — ler do root
-    featuresContent = await readArtifact(workspace, artifacts, 'features');
-
-    // PID do loop
-    const pidContent = await readArtifact(workspace, artifacts, 'pid');
-    if (pidContent !== null) {
-      const parsed = parseInt(pidContent.trim(), 10);
-      if (!isNaN(parsed) && isPidRunning(parsed)) {
-        loopActive = true;
-        loopPid = parsed;
-      }
-    }
-
-    // Estado do loop
-    const stateContent = await readArtifact(workspace, artifacts, 'state');
-    if (stateContent !== null) {
-      try {
-        const stateData = JSON.parse(stateContent);
-        loopIteration = stateData.iteration ?? null;
-        loopStartedAt = stateData.started_at ?? null;
-      } catch { /* ignore */ }
-    }
+    loopIteration = harness.loopState.iteration ?? null;
+    loopStartedAt = harness.loopState.started_at ?? null;
   }
 
   if (featuresContent === null) {
@@ -166,7 +137,7 @@ export async function getStatus(pathOrOptions) {
       name: project.name,
       workspace,
       state: 'initialized',
-      session: v2?.session || null,
+      session: harness?.session || null,
       loop: { active: false, pid: null, iteration: null, started_at: null },
       features: { total: 0, pending: 0, in_progress: 0, failing: 0, blocked: 0, skipped: 0, passing: 0 },
       progress: 0,
@@ -204,7 +175,7 @@ export async function getStatus(pathOrOptions) {
     name: project.name,
     workspace,
     state,
-    session: v2?.session || null,
+    session: harness?.session || null,
     loop: {
       active: loopActive,
       pid: loopPid,

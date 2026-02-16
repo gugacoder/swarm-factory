@@ -57,14 +57,13 @@ export async function createProject(params) {
 
   // Montar project.json
   const project = {
-    version: 1,
     slug,
     name,
     description,
     specs,
     workspace,
     agent,
-    artifacts: getDefaultArtifacts(1),
+    artifacts: getDefaultArtifacts(),
   };
 
   // Validar contra schema

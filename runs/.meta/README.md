@@ -11,10 +11,10 @@ Toda a API é acessível como CLI (scripts Node.js) e como SDK (imports ES Modul
 | Conceito | Descrição |
 |----------|-----------|
 | **project.json** | Manifesto do projeto — declara slug, workspace, specs, agente e artefatos. Fonte da verdade. |
-| **Workspace** | Diretório de desenvolvimento onde o código vive. V2: artefatos em `.harness/`. V1: artefatos no root. |
+| **Workspace** | Diretório de desenvolvimento onde o código vive. Artefatos em `.harness/`. |
 | **Features** | Unidades de trabalho rastreadas em `features.json`. Cada feature tem status, prioridade e dependências. |
-| **Session** | Em V2, uma session = milestone dentro de `.harness/{session}/`. Permite múltiplos milestones no mesmo workspace. |
-| **Sessão de Feature** | Uma execução do agente para implementar uma feature. V2: `.harness/{session}/runs/`. V1: `.sessions/{feature-id}/`. |
+| **Session** | Uma session = milestone dentro de `.harness/{session}/`. Permite múltiplos milestones no mesmo workspace. |
+| **Sessão de Feature** | Uma execução do agente para implementar uma feature. Registrada em `.harness/{session}/runs/`. |
 | **Harness** | Agente executor (`claude-code`, `opencode`, `codex`). Cada harness tem seu template de scripts e commands. |
 | **Loop** | O Ralph Wiggum Loop — seleciona a próxima feature elegível, spawna o agente, verifica resultado, repete. |
 
@@ -31,9 +31,8 @@ node runs/.meta/api/create-project.mjs \
   --harness claude-code
 
 # Saída:
-# ✔ Projeto criado: runs/meu-app/01-new-concepts/project.json
+# ✔ Projeto criado: runs/meu-app/project.json
 # {
-#   "version": 1,
 #   "slug": "meu-app",
 #   "name": "Meu App",
 #   "specs": "./docs/specs",
@@ -61,17 +60,16 @@ node runs/.meta/api/init-workspace.mjs --slug meu-app
 # ✔ Workspace inicializado: /home/user/meu-app
 # {
 #   "workspace": "/home/user/meu-app",
-#   "harness_json_path": "/home/user/meu-app/agent-harness.json",
 #   "slug": "meu-app",
 #   "name": "Meu App",
 #   "harness": "claude-code",
-#   "artifacts_created": ["harness_config", "harness_script", "sessions", ...]
+#   "artifacts_created": ["harness_dir", "scripts_dir", "prompt", ...]
 # }
 ```
 
 Após inicializar, execute o Initializer Agent para gerar `features.json` a partir dos PRPs.
 
-### Criar worktree isolado (V2)
+### Criar worktree isolado
 
 ```bash
 node runs/.meta/api/create-worktree.mjs \
@@ -86,8 +84,6 @@ node runs/.meta/api/create-worktree.mjs \
 ```
 
 ### Executar uma feature
-
-**V2 (com .harness/):**
 
 ```bash
 cd /home/user/meu-app
@@ -104,28 +100,12 @@ MAX_FEATURES=1 node .harness/scripts/loop.mjs
 # }
 ```
 
-**V1 (legacy):**
-
-```bash
-cd /home/user/meu-app
-MAX_FEATURES=1 node agent-harness.mjs
-```
-
 ### Executar loop contínuo
-
-**V2:**
 
 ```bash
 cd /home/user/meu-app
 node .harness/scripts/loop.mjs                  # Session de .harness/active
 node .harness/scripts/loop.mjs 09-checklist     # Session explícita
-```
-
-**V1:**
-
-```bash
-cd /home/user/meu-app
-node agent-harness.mjs
 ```
 
 Loop executa até:
@@ -215,7 +195,7 @@ node runs/.meta/api/list-projects.mjs --format json
 #     "workspace": "/home/user/meu-app",
 #     "harness": "claude-code",
 #     "format": "structured",
-#     "_source": "runs/meu-app/01-new-concepts/project.json"
+#     "_source": "runs/meu-app/project.json"
 #   }
 # ]
 ```
@@ -269,7 +249,6 @@ const project = await createProject({
   harness: 'claude-code',
   max_turns: 100
 })
-// project.version === 1
 // project.agent.max_turns === 100
 ```
 
@@ -289,19 +268,19 @@ Carrega, valida e enriquece um `project.json` com paths resolvidos.
 
 ```javascript
 // Por path
-const p = await loadProject('runs/meu-app/01-new-concepts/project.json')
+const p = await loadProject('runs/meu-app/project.json')
 
 // Por slug
 const p = await loadProject({ slug: 'meu-app', runsDir: 'runs/' })
 
-// p._source → 'runs/meu-app/01-new-concepts/project.json'
+// p._source → 'runs/meu-app/project.json'
 // p._resolved.specs → '/absolute/path/to/specs'
 // p._resolved.artifacts.features → '/absolute/path/to/features.json'
 ```
 
 ### initWorkspace(pathOrOptions)
 
-Inicializa o workspace de um projeto: cria diretórios, gera `agent-harness.json`, copia scripts e commands.
+Inicializa o workspace de um projeto: cria `.harness/`, copia scripts e commands.
 
 **Parâmetros:**
 - `string` — caminho direto para `project.json`
@@ -312,7 +291,6 @@ Inicializa o workspace de um projeto: cria diretórios, gera `agent-harness.json
 ```javascript
 {
   workspace: string,            // path absoluto
-  harness_json_path: string,    // path de agent-harness.json
   slug: string,
   name: string,
   harness: string,
@@ -320,7 +298,7 @@ Inicializa o workspace de um projeto: cria diretórios, gera `agent-harness.json
 }
 ```
 
-**Comportamento na reinicialização:** sobrescreve `agent-harness.json` e scripts do harness, mas preserva `features.json` e `agent-progress.txt`.
+**Comportamento na reinicialização:** sobrescreve scripts do harness, mas preserva `features.json` e `progress.txt`.
 
 **Erros:**
 - Projeto não encontrado ou inválido
@@ -328,7 +306,7 @@ Inicializa o workspace de um projeto: cria diretórios, gera `agent-harness.json
 ```javascript
 const result = await initWorkspace({ slug: 'meu-app' })
 // result.workspace → '/home/user/meu-app'
-// result.artifacts_created → ['harness_config', 'harness_script', 'sessions', ...]
+// result.artifacts_created → ['harness_dir', 'scripts_dir', 'prompt', ...]
 ```
 
 ### listProjects(options)
@@ -409,11 +387,10 @@ const status = await getStatus({ slug: 'meu-app' })
 
 ### project.json
 
-Manifesto do projeto. Vive no diretório de runs. Schema v1.
+Manifesto do projeto. Vive no diretório de runs.
 
 | Campo | Tipo | Descrição |
 |-------|------|-----------|
-| `version` | integer | Versão do schema (atualmente `1`) |
 | `slug` | string | Identificador machine-friendly |
 | `name` | string | Nome humano do projeto |
 | `description` | string \| null | Contexto sobre o projeto |
@@ -427,31 +404,9 @@ Dois formatos no filesystem:
 | Formato | Path | Uso |
 |---------|------|-----|
 | **Flat** | `runs/{slug}.json` | Projetos avulsos, criação manual |
-| **Structured** | `runs/{slug}/{milestone}/project.json` | Padrão, via `create-project.mjs` |
+| **Structured** | `runs/{slug}/project.json` | Padrão, via `create-project.mjs` |
 
 Ambos produzem o mesmo objeto em memória após `loadProject()`.
-
-### agent-harness.json
-
-Versão resolvida do config. Gerado por `initWorkspace()` no workspace destino. Torna o workspace autônomo — o loop usa apenas este arquivo.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `_version` | integer | Versão do schema que gerou este arquivo |
-| `slug` | string | Slug do projeto |
-| `name` | string | Nome do projeto |
-| `specs` | string | Caminho **absoluto** resolvido para specs |
-| `workspace` | string | Caminho **absoluto** do workspace |
-| `agent` | AgentConfig | Configuração do agente |
-| `artifacts` | Record\<string, string\> | Paths **absolutos** resolvidos de cada artefato |
-| `session_template` | SessionTemplate | Template de sessão com `pattern`, `files`, `dirs` |
-| `notifications` | Notification[] | Webhooks configurados (inicialmente `[]`) |
-
-Diferenças em relação ao `project.json`:
-- Todos os paths são absolutos (resolvidos)
-- Contém `session_template` expandido
-- Contém `notifications` (configurável após geração)
-- Campo `_version` com underscore (metadado interno)
 
 ### features.json
 
@@ -480,28 +435,9 @@ Status possíveis:
 | `skipped` | Pulada — gutter detection após falhas consecutivas |
 | `passing` | Passando — testes OK, feature completa |
 
-### agent-harness.state
-
-Estado runtime do loop. JSON. Atualizado a cada iteração.
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `status` | string | `starting`, `running`, `between`, `exited` |
-| `iteration` | integer | Iteração atual do loop |
-| `max_iterations` | integer \| null | Limite configurado |
-| `total` | integer | Total de features |
-| `done` | integer | Features com status `passing` |
-| `remaining` | integer | `total - done` |
-| `feature_id` | string | ID da feature atual (ou vazio) |
-| `features_done` | integer | Features completadas nesta execução |
-| `max_features` | integer \| null | Limite configurado |
-| `started_at` | string | Timestamp ISO8601 de início do loop |
-| `updated_at` | string | Timestamp ISO8601 da última atualização |
-| `exit_reason` | string | Motivo de saída (quando `status` é `exited`) |
-
 ## Artefatos do Workspace
 
-### V2 — Estrutura `.harness/` (multi-milestone)
+### Estrutura `.harness/` (multi-milestone)
 
 ```
 workspace/
@@ -561,22 +497,6 @@ workspace/
 | `exit_code` | number | Código de saída |
 | `retries` | number | Tentativas acumuladas |
 
-### V1 — Artefatos flat (legacy)
-
-Artefatos padrão da versão 1, gerados por `initWorkspace()`:
-
-| Chave | Tipo | Path Padrão | Descrição |
-|-------|------|-------------|-----------|
-| `harness_config` | file | `./agent-harness.json` | Config resolvida do workspace |
-| `harness_script` | file | `./agent-harness.mjs` | Script do loop |
-| `setup_script` | file | `./agent-setup.mjs` | Script de setup inicial |
-| `features` | file | `./features.json` | Tracking de features |
-| `progress` | file | `./agent-progress.txt` | Log textual de progresso |
-| `state` | file | `./agent-harness.state` | Estado do loop (runtime) |
-| `pid` | file | `./agent-harness.pid` | PID do loop (runtime) |
-| `sessions` | dir | `./.sessions` | Diretório de sessões |
-| `current_milestone` | file | `./.sessions/.current-milestone` | Milestone ativo |
-
 ## Configuração do Agente
 
 Campos do objeto `agent` em `project.json`:
@@ -594,7 +514,7 @@ Todos os campos (exceto `harness`) podem ser sobrescritos via variáveis de ambi
 
 ## Webhooks
 
-Configurados no array `notifications` do `agent-harness.json`:
+Configurados no array `notifications` do `config.json`:
 
 ```json
 {
@@ -642,29 +562,7 @@ Configurados no array `notifications` do `agent-harness.json`:
 }
 ```
 
-Envio: HTTP POST com `Content-Type: application/json`. Timeout de 10 segundos. Fire-and-forget — erro em um webhook não impede os demais. Resultados registrados em `agent-progress.txt`.
-
-## Sessões de Feature
-
-Cada execução do agente para uma feature cria uma sessão em `.sessions/{feature-id}/`:
-
-| Arquivo | Conteúdo |
-|---------|----------|
-| `started_at` | Timestamp ISO8601 de início |
-| `finished_at` | Timestamp ISO8601 de conclusão |
-| `pid` | PID do processo do agente |
-| `output.jsonl` | Log stream JSON do agente |
-| `checklist.md` | Checklist de critérios da feature |
-
-Diretórios criados conforme `session_template.dirs`:
-
-| Diretório | Descrição |
-|-----------|-----------|
-| `worktree/` | Placeholder para git worktree isolado (Futuro) |
-
-O arquivo `.sessions/.current-feature` indica a feature em execução no momento.
-
-O `session_template` em `agent-harness.json` define a estrutura e pode ser consultado por ferramentas externas (dashboard, monitor).
+Envio: HTTP POST com `Content-Type: application/json`. Timeout de 10 segundos. Fire-and-forget — erro em um webhook não impede os demais. Resultados registrados em `progress.txt`.
 
 ## Graceful Stop
 
@@ -718,7 +616,7 @@ Configurado em `agent.rollback` (default: `stash`):
 
 O arquivo `agent-guardrails.md` é criado/atualizado com lições aprendidas quando ocorre rotação ou skip. Contém fatos (timestamp, problema, ação, resultado) — não interpretações.
 
-Registros no `agent-progress.txt`:
+Registros no `progress.txt`:
 - `[FALHA]` — falha de feature
 - `[ROTAÇÃO]` — rotação de contexto executada
 - `[ROLLBACK]` — rollback executado
@@ -728,7 +626,7 @@ Registros no `agent-progress.txt`:
 
 ### Loop não inicia
 
-Verifique se `agent-harness.json` existe no workspace. Execute `initWorkspace()` antes de rodar o loop.
+Verifique se `.harness/` existe no workspace com `active` apontando para uma session válida. Execute `initWorkspace()` antes de rodar o loop.
 
 ### Feature bloqueada permanentemente
 
@@ -736,19 +634,15 @@ Quando uma feature depende de outra que foi marcada como `skipped`, ela nunca se
 
 ### PID stale
 
-Se o loop foi interrompido abruptamente, o arquivo `agent-harness.pid` pode conter um PID inválido. O `getStatus()` verifica se o processo está ativo (cross-platform). Remova manualmente se necessário:
-
-```bash
-rm agent-harness.pid
-```
+Se o loop foi interrompido abruptamente, `loop.json` pode conter um PID inválido. O `getStatus()` verifica se o processo está ativo (cross-platform).
 
 ### Reinicializar workspace sem perder features
 
-Execute `initWorkspace()` novamente — sobrescreve `agent-harness.json` e scripts, mas preserva `features.json` e `agent-progress.txt`.
+Execute `initWorkspace()` novamente — sobrescreve scripts do harness, mas preserva `features.json` e `progress.txt`.
 
 ### Webhook não dispara
 
-Verifique o array `notifications` em `agent-harness.json`. Webhooks são fire-and-forget — erros são registrados em `agent-progress.txt` como `[WEBHOOK] POST {url} → ERRO`.
+Verifique o array `notifications` em `.harness/{session}/config.json`. Webhooks são fire-and-forget — erros são registrados em `progress.txt` como `[WEBHOOK] POST {url} → ERRO`.
 
 ### Features em `in_progress` após crash
 
@@ -756,7 +650,7 @@ Se o loop foi interrompido durante a execução de uma feature, ela pode ficar c
 
 ### Worktrees / Multi-milestone
 
-Com V2, múltiplos milestones podem coexistir no mesmo workspace (via `.harness/{session}/`). Para isolamento completo via git worktree:
+Múltiplos milestones podem coexistir no mesmo workspace (via `.harness/{session}/`). Para isolamento completo via git worktree:
 
 ```bash
 node runs/.meta/api/create-worktree.mjs \
@@ -768,4 +662,4 @@ Isso cria um worktree separado com branch `milestone/{milestone}` e estrutura `.
 
 ---
 
-*Documentação do módulo Runs v3 — schema versão 1 (V1 legacy) e versão 2 (V2 .harness/).*
+*Documentação do módulo Runs — estrutura `.harness/` com sessions multi-milestone.*
