@@ -248,7 +248,7 @@ async function main() {
   const config = await loadSessionConfig(harnessDir, session);
   const harness = config.agent?.harness || 'claude-code';
 
-  // Paths V2
+  // Paths
   const featuresPath = join(sessionDir, 'features.json');
   const loopStatePath = join(sessionDir, 'loop.json');
   const progressPath = join(sessionDir, 'progress.txt');
@@ -298,7 +298,7 @@ async function main() {
   const featuresLimitLabel = maxFeatures === 0 ? '∞' : String(maxFeatures);
 
   console.log(`${CYAN}=======================================${NC}`);
-  console.log(`${CYAN}  Ralph Wiggum Loop — V2${NC}`);
+  console.log(`${CYAN}  Ralph Wiggum Loop${NC}`);
   console.log(`${CYAN}  Session: ${session}${NC}`);
   console.log(`${CYAN}  Harness: ${harness}${NC}`);
   console.log(`${CYAN}  Iterações: ${limitLabel}${NC}`);

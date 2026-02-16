@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 // =============================================================================
-// exec-setup-harness.mjs — Executor remoto do setup-harness
-// Invoca setup-harness.mjs no workspace destino.
+// exec-setup-harness.mjs — Executor remoto do initialize-harness
+// Resolve initialize-harness.mjs de runs/.meta/harnesses/{harness}/ e invoca no workspace.
 //
 // Invocação:
 //   node exec-setup-harness.mjs --workspace /path/to/target [--force]
 // =============================================================================
 
 import { spawn } from 'node:child_process';
-import { access } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { access, readFile } from 'node:fs/promises';
+import { resolve, join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function fileExists(filePath) {
   try {
@@ -19,6 +22,11 @@ async function fileExists(filePath) {
   } catch {
     return false;
   }
+}
+
+async function readJson(filePath) {
+  const raw = await readFile(filePath, 'utf8');
+  return JSON.parse(raw);
 }
 
 async function main() {
@@ -36,14 +44,40 @@ async function main() {
   }
 
   const workspace = resolve(values.workspace);
-  const setupScript = join(workspace, 'setup-harness.mjs');
 
-  if (!await fileExists(setupScript)) {
-    console.error(JSON.stringify({ error: `setup-harness.mjs não encontrado em ${workspace}` }));
+  // Ler session ativa de .harness/active
+  const activePath = join(workspace, '.harness', 'active');
+  if (!await fileExists(activePath)) {
+    console.error(JSON.stringify({ error: `.harness/active não encontrado em ${workspace}` }));
     process.exit(1);
   }
 
-  const args = [setupScript];
+  const session = (await readFile(activePath, 'utf8')).trim();
+  if (!session) {
+    console.error(JSON.stringify({ error: '.harness/active está vazio' }));
+    process.exit(1);
+  }
+
+  // Ler config da session para obter harness type
+  const configPath = join(workspace, '.harness', session, 'config.json');
+  if (!await fileExists(configPath)) {
+    console.error(JSON.stringify({ error: `.harness/${session}/config.json não encontrado em ${workspace}` }));
+    process.exit(1);
+  }
+
+  const config = await readJson(configPath);
+  const harnessType = config.agent?.harness || 'claude-code';
+
+  // Resolver initialize-harness.mjs de runs/.meta/harnesses/{harness}/
+  const metaDir = resolve(__dirname, '..');
+  const initScript = join(metaDir, 'harnesses', harnessType, 'initialize-harness.mjs');
+
+  if (!await fileExists(initScript)) {
+    console.error(JSON.stringify({ error: `initialize-harness.mjs não encontrado para harness "${harnessType}" em ${initScript}` }));
+    process.exit(1);
+  }
+
+  const args = [initScript];
   if (values.force) args.push('--force');
 
   const proc = spawn('node', args, {

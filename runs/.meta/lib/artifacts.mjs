@@ -2,26 +2,11 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { resolve, isAbsolute } from 'node:path';
 
 /**
- * Artefatos padrão por versão.
+ * Artefatos padrão do harness.
  * Cada artefato tem type (file|dir) e path (relativo ao workspace).
- */
-const ARTIFACTS_V1 = {
-  harness_config: { type: 'file', path: './agent-harness.json' },
-  harness_script: { type: 'file', path: './agent-harness.mjs' },
-  setup_script:   { type: 'file', path: './agent-setup.mjs' },
-  features:       { type: 'file', path: './features.json' },
-  progress:       { type: 'file', path: './agent-progress.txt' },
-  state:          { type: 'file', path: './agent-harness.state' },
-  pid:            { type: 'file', path: './agent-harness.pid' },
-  sessions:       { type: 'dir',  path: './.sessions' },
-  current_milestone: { type: 'file', path: './.sessions/.current-milestone' }
-};
-
-/**
- * Artefatos V2 — estrutura .harness/ com sessions per-milestone.
  * {session} é substituído pelo nome da session (ex: 08-precificacao).
  */
-const ARTIFACTS_V2 = {
+const DEFAULT_ARTIFACTS = {
   harness_dir:    { type: 'dir',  path: './.harness' },
   scripts_dir:    { type: 'dir',  path: './.harness/scripts' },
   prompt:         { type: 'file', path: './.harness/prompt.md' },
@@ -36,56 +21,32 @@ const ARTIFACTS_V2 = {
 };
 
 /**
- * Session template padrão por versão.
- * Define a estrutura de cada sessão de feature.
+ * Session template — feature runs dentro de .harness/{session}/runs/.
  */
-const SESSION_TEMPLATE_V1 = {
-  pattern: './.sessions/{feature-id}/',
-  files: ['checklist.md', 'output.jsonl', 'pid', 'started_at', 'finished_at'],
-  dirs: ['worktree']
-};
-
-/**
- * Session template V2 — feature runs dentro de .harness/{session}/runs/.
- */
-const SESSION_TEMPLATE_V2 = {
+const DEFAULT_SESSION_TEMPLATE = {
   pattern: './.harness/{session}/runs/{feature-id}',
   files: ['{feature-id}.jsonl', '{feature-id}.json'],
   dirs: []
 };
 
 /**
- * Retorna artefatos padrão para a versão especificada.
- * @param {number} version - versão do schema
+ * Retorna artefatos padrão.
  * @returns {Record<string, {type: string, path: string}>} artefatos padrão
  */
-export function getDefaultArtifacts(version) {
-  if (version === 1) {
-    return structuredClone(ARTIFACTS_V1);
-  }
-  if (version === 2) {
-    return structuredClone(ARTIFACTS_V2);
-  }
-  throw new Error(`Versão de artefatos não suportada: ${version}`);
+export function getDefaultArtifacts() {
+  return structuredClone(DEFAULT_ARTIFACTS);
 }
 
 /**
- * Retorna session template padrão para a versão especificada.
- * @param {number} version - versão do schema
+ * Retorna session template padrão.
  * @returns {{pattern: string, files: string[], dirs: string[]}} template de sessão
  */
-export function getDefaultSessionTemplate(version) {
-  if (version === 1) {
-    return structuredClone(SESSION_TEMPLATE_V1);
-  }
-  if (version === 2) {
-    return structuredClone(SESSION_TEMPLATE_V2);
-  }
-  throw new Error(`Versão de session template não suportada: ${version}`);
+export function getDefaultSessionTemplate() {
+  return structuredClone(DEFAULT_SESSION_TEMPLATE);
 }
 
 /**
- * Resolve placeholders em paths de artefatos V2.
+ * Resolve placeholders em paths de artefatos.
  * @param {Record<string, {type: string, path: string}>} artifacts - artefatos com placeholders
  * @param {string} session - nome da session (ex: '08-precificacao')
  * @returns {Record<string, {type: string, path: string}>} artefatos com paths resolvidos

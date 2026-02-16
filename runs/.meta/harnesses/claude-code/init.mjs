@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Claude Code — Initializer Runner (V2)
+// Claude Code — Initializer Runner
 // Spawna o agente inicializador que gera features.json a partir dos PRPs.
 // =============================================================================
 

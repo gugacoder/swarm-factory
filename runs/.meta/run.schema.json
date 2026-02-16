@@ -23,7 +23,7 @@
     },
     "session_name": {
       "type": ["string", "null"],
-      "description": "Nome da session dentro de .harness/ (V2). Se ausente, usa o milestone como session_name."
+      "description": "Nome da session dentro de .harness/. Se ausente, usa o milestone como session_name."
     },
     "scaffold": {
       "type": ["string", "null"],

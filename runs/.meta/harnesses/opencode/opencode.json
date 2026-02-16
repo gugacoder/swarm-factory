@@ -11,7 +11,7 @@
   "default_agent": "coder",
   "command": {
     "vibe-init": {
-      "template": "Inicialize o harness. Leia .sessions/.current-milestone para identificar o milestone, depois siga as instruções do agent initializer.",
+      "template": "Inicialize o harness. Leia .harness/active para identificar a session, depois siga as instruções do agent initializer.",
       "description": "Inicializa agent harness",
       "agent": "initializer"
     },

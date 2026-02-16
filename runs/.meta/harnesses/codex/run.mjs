@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Codex — Agent Runner (V2)
+// Codex — Agent Runner
 // Spawna o agente Codex para implementar uma feature.
 // Exporta spawnAgent() para uso pelo loop.mjs compartilhado.
 // =============================================================================

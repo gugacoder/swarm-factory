@@ -4,14 +4,9 @@
   "title": "Project JSON",
   "description": "Manifesto do projeto — fonte da verdade para orquestração do Swarm Factory",
   "type": "object",
-  "required": ["version", "slug", "name", "specs", "workspace", "agent", "artifacts"],
+  "required": ["slug", "name", "specs", "workspace", "agent", "artifacts"],
   "additionalProperties": false,
   "properties": {
-    "version": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Versão do schema — define quais artefatos existem"
-    },
     "slug": {
       "type": "string",
       "pattern": "^[a-z0-9][a-z0-9-]*$",

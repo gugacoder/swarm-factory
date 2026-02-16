@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Claude Code — Agent Runner (V2)
+// Claude Code — Agent Runner
 // Spawna o agente Claude Code para implementar uma feature.
 // Exporta spawnAgent() para uso pelo loop.mjs compartilhado.
 // =============================================================================

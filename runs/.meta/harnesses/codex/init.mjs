@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // =============================================================================
-// Codex — Initializer Runner (V2)
+// Codex — Initializer Runner
 // Spawna o agente inicializador que gera features.json a partir dos PRPs.
 // =============================================================================
 

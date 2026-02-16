@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // =============================================================================
 // exec-agent-harness.mjs — Executor remoto do loop autônomo
-// Invoca agent-harness.mjs no workspace destino (detached).
+// Invoca .harness/scripts/loop.mjs no workspace destino (detached).
 //
 // Invocação:
 //   node exec-agent-harness.mjs --workspace /path/to/target [--max-turns N] [--max-features N]
@@ -11,7 +11,7 @@
 // =============================================================================
 
 import { spawn } from 'node:child_process';
-import { access, writeFile, mkdir } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { openSync } from 'node:fs';
@@ -41,10 +41,23 @@ async function main() {
   }
 
   const workspace = resolve(values.workspace);
-  const harnessScript = join(workspace, 'agent-harness.mjs');
 
-  if (!await fileExists(harnessScript)) {
-    console.error(JSON.stringify({ error: `agent-harness.mjs não encontrado em ${workspace}` }));
+  // Ler session ativa de .harness/active
+  const activePath = join(workspace, '.harness', 'active');
+  if (!await fileExists(activePath)) {
+    console.error(JSON.stringify({ error: `.harness/active não encontrado em ${workspace}` }));
+    process.exit(1);
+  }
+
+  const session = (await readFile(activePath, 'utf8')).trim();
+  if (!session) {
+    console.error(JSON.stringify({ error: '.harness/active está vazio' }));
+    process.exit(1);
+  }
+
+  const loopScript = join(workspace, '.harness', 'scripts', 'loop.mjs');
+  if (!await fileExists(loopScript)) {
+    console.error(JSON.stringify({ error: `loop.mjs não encontrado em ${workspace}/.harness/scripts/` }));
     process.exit(1);
   }
 
@@ -53,14 +66,12 @@ async function main() {
   if (values['max-turns']) env.MAX_TURNS = values['max-turns'];
   if (values['max-features']) env.MAX_FEATURES = values['max-features'];
 
-  // Preparar log file
-  const logsDir = join(workspace, '.sessions');
-  await mkdir(logsDir, { recursive: true });
-  const logPath = join(logsDir, 'loop-output.log');
+  // Preparar log file em .harness/{session}/loop-output.log
+  const logPath = join(workspace, '.harness', session, 'loop-output.log');
   const logFd = openSync(logPath, 'a');
 
-  // Spawnar detached
-  const proc = spawn('node', [harnessScript], {
+  // Spawnar detached com session como argumento
+  const proc = spawn('node', [loopScript, session], {
     cwd: workspace,
     env,
     stdio: ['ignore', logFd, logFd],
@@ -74,8 +85,9 @@ async function main() {
   console.log(JSON.stringify({
     pid,
     workspace,
+    session,
     log: logPath,
-    message: `Loop iniciado (PID ${pid}). Para parar: touch ${join(workspace, '.stop')}`,
+    message: `Loop iniciado (PID ${pid}, session: ${session}). Para parar: touch ${join(workspace, '.stop')}`,
   }));
 }
 
