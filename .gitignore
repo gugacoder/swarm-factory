@@ -55,3 +55,7 @@ worktrees/
 
 # Legacy (migrado para apps/sneak-peek-hub)
 .sneak-peek/
+
+# Ignora os runs menos a .meta
+runs/*
+!runs/.meta/**
