@@ -1,6 +1,7 @@
 import { Plugin } from 'vite'
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import { execSync, spawn } from 'child_process'
 import type { LoopState, RunConfig, JsonlEvent, SessionMetrics } from './lib/types'
 
@@ -68,6 +69,22 @@ function parseFeatures(filePath: string): RawFeature[] {
 interface ResolvedRun {
   config: RunConfig
   workspacePath: string
+}
+
+/** Spawna processo independente sem janela (Windows: wscript+VBS, Unix: detached) */
+function spawnDetached(command: string, args: string[], options: { cwd: string; env?: NodeJS.ProcessEnv; stdio?: any }) {
+  if (process.platform === 'win32') {
+    const vbsPath = path.join(os.tmpdir(), 'swarm-run-hidden.vbs')
+    if (!fs.existsSync(vbsPath)) {
+      fs.writeFileSync(vbsPath, 'CreateObject("Wscript.Shell").Run WScript.Arguments(0), 0, False\n')
+    }
+    const fullCmd = [command, ...args].map(a => a.includes(' ') ? `"${a}"` : a).join(' ')
+    spawn('wscript.exe', [vbsPath, fullCmd], { cwd: options.cwd, env: options.env, stdio: 'ignore' })
+    return { pid: undefined }
+  }
+  const child = spawn(command, args, { ...options, detached: true })
+  child.unref()
+  return { pid: child.pid }
 }
 
 function discoverRuns(runsDir: string): ResolvedRun[] {
@@ -1251,16 +1268,14 @@ export function runMonitorPlugin(runsDir?: string): Plugin {
             const stopPath = path.join(workspacePath, '.stop')
             if (fs.existsSync(stopPath)) fs.unlinkSync(stopPath)
 
-            const child = spawn('bash', ['./agent-harness.sh'], {
+            const { pid } = spawnDetached('bash', ['./agent-harness.sh'], {
               cwd: workspacePath,
-              detached: true,
               stdio: 'ignore',
               env: { ...process.env, MAX_ITERATIONS: String(maxIterations) },
             })
-            child.unref()
 
-            if (child.pid) {
-              fs.writeFileSync(path.join(workspacePath, 'agent-harness.pid'), String(child.pid))
+            if (pid) {
+              fs.writeFileSync(path.join(workspacePath, 'agent-harness.pid'), String(pid))
             }
 
             // Invalidate cache for this run

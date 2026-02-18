@@ -1,7 +1,8 @@
-import { resolve } from 'node:path';
+import { resolve, join } from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import * as projectService from './project-service.js';
 
 export async function start(slug: string, options?: { maxTurns?: number; model?: string }) {
@@ -27,16 +28,26 @@ export async function start(slug: string, options?: { maxTurns?: number; model?:
   if (options?.model) env.MODEL = options.model;
   env.MAX_FEATURES = '1'; // Uma feature por dispatch (loop manual)
 
-  // Spawnar processo
-  const child = spawn('node', [harnessScript], {
-    cwd: workspace,
-    env,
-    stdio: 'ignore',
-    detached: true,
-  });
+  // Spawnar processo independente sem janela
+  let pid: number | undefined;
 
-  child.unref();
-  const pid = child.pid;
+  if (process.platform === 'win32') {
+    const vbsPath = join(tmpdir(), 'swarm-run-hidden.vbs');
+    if (!existsSync(vbsPath)) {
+      writeFileSync(vbsPath, 'CreateObject("Wscript.Shell").Run WScript.Arguments(0), 0, False\n');
+    }
+    const fullCmd = [process.execPath, harnessScript].map(a => a.includes(' ') ? `"${a}"` : a).join(' ');
+    spawn('wscript.exe', [vbsPath, fullCmd], { cwd: workspace, env: env as any, stdio: 'ignore' });
+  } else {
+    const child = spawn('node', [harnessScript], {
+      cwd: workspace,
+      env,
+      stdio: 'ignore',
+      detached: true,
+    });
+    child.unref();
+    pid = child.pid;
+  }
 
   return { pid, workspace };
 }
