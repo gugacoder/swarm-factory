@@ -9,7 +9,7 @@
   "scripts": {
     "dev:all": "concurrently -n hub,backbone -c cyan,magenta \"npm run dev:hub\" \"npm run dev:backbone\"",
     "dev:hub": "dotenv -- npm run dev --workspace=apps/hub",
-    "dev:sneak-peek-hub": "npm run dev --workspace=apps/sneak-peek-hub",
+    "dev:sneak-peek": "npm run dev --workspace=apps/sneak-peek-hub",
     "dev:backbone": "dotenv -- npm run dev --workspace=apps/backbone",
     "build:all": "npm run build --workspace=apps/backbone && npm run build --workspace=apps/hub",
     "platform:up": "dotenv -- docker compose -f docker-compose.dev.yml up -d",
