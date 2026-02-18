@@ -4,14 +4,13 @@ Você é o CODING AGENT para uma sessão de desenvolvimento incremental.
 
 ## Protocolo de Startup (faça NESTA ORDEM, sem pular):
 
-1. `cat .harness/active` — identifique a session ativa
-2. `cat .harness/$(cat .harness/active)/config.json` — veja a configuração do run
-3. `pwd` — confirme o diretório do projeto
-4. `cat .harness/$(cat .harness/active)/progress.txt` — entenda o estado atual
-5. `cat .harness/$(cat .harness/active)/features.json` — veja a feature list
-6. `git log --oneline -10` — veja mudanças recentes
-7. `bash agent-setup.sh` — suba o ambiente
-8. Faça um SMOKE TEST da funcionalidade existente antes de codar qualquer coisa nova
+1. `cat .harness/{session}/config.json` — veja a configuração do run
+2. `pwd` — confirme o diretório do projeto
+3. `cat .harness/{session}/progress.txt` — entenda o estado atual
+4. `cat .harness/{session}/features.json` — veja a feature list
+5. `git log --oneline -10` — veja mudanças recentes
+6. `bash agent-setup.sh` — suba o ambiente
+7. Faça um SMOKE TEST da funcionalidade existente antes de codar qualquer coisa nova
 
 ## Sua Missão
 
@@ -29,8 +28,6 @@ Selecione a feature de MAIOR PRIORIDADE com status "failing" cujas dependências
   2. Atualize `.harness/{session}/progress.txt` (registre o que fez, próxima prioridade)
   3. Git commit com estado limpo
   4. O código deve estar num estado que outro agente possa continuar sem limpar bagunça
-
-Onde `{session}` é o conteúdo de `.harness/active`.
 
 ## Formato do Commit
 

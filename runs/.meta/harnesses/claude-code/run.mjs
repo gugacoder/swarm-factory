@@ -30,9 +30,10 @@ async function fileExists(filePath) {
  * @param {string} params.runsDir - path para runs (.harness/{session}/runs/)
  * @param {string} params.promptPath - path do prompt (.harness/prompt.md)
  * @param {string} params.workspace - path do workspace root
+ * @param {string} params.session - nome da session
  * @returns {Promise<{code: number, pid: number}>}
  */
-export async function spawnAgent({ config, featureId, sessionDir, runsDir, promptPath, workspace }) {
+export async function spawnAgent({ config, featureId, sessionDir, runsDir, promptPath, workspace, session }) {
   if (!await fileExists(promptPath)) {
     throw new Error(`Prompt não encontrado: ${promptPath}`);
   }
@@ -65,9 +66,10 @@ export async function spawnAgent({ config, featureId, sessionDir, runsDir, promp
       shell: true,
     });
 
-    // Pipe stdin do prompt
+    // Pipe stdin do prompt (substituir {session} pelo nome real)
     readFile(promptPath, 'utf8').then(content => {
-      proc.stdin.write(content);
+      const prompt = session ? content.replace(/\{session\}/g, session) : content;
+      proc.stdin.write(prompt);
       proc.stdin.end();
     }).catch(err => {
       proc.kill();

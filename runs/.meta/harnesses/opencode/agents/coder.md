@@ -6,8 +6,7 @@ Você é o CODING AGENT para uma sessão de desenvolvimento incremental.
 
 ## Protocolo de Startup (faça NESTA ORDEM, sem pular):
 
-1. `cat .harness/active` — identifique a session ativa
-2. `cat .harness/{session}/config.json` — veja a configuração do run (specs, etc.)
+1. `cat .harness/{session}/config.json` — veja a configuração do run (specs, etc.)
 3. `pwd` — confirme o diretório do projeto
 4. `cat .harness/{session}/progress.txt` — entenda o estado atual
 5. `cat .harness/{session}/features.json` — veja a feature list

@@ -148,10 +148,7 @@ export async function initWorkspace(pathOrOptions) {
   const configPath = join(sessionDir, 'config.json');
   await writeFile(configPath, JSON.stringify(configJson, null, 2) + '\n', 'utf8');
 
-  // 4e. Escrever .harness/active
-  await writeFile(join(harnessDir, 'active'), sessionName + '\n', 'utf8');
-
-  // 4f. Copiar commands do harness no workspace
+  // 4e. Copiar commands do harness no workspace
   const commandsMap = {
     'claude-code': {
       src: join(HARNESSES_DIR, 'claude-code', 'templates'),
@@ -193,7 +190,6 @@ export async function initWorkspace(pathOrOptions) {
       '.harness/scripts/run.mjs',
       '.harness/scripts/init.mjs',
       '.harness/prompt.md',
-      '.harness/active',
       `.harness/${sessionName}/config.json`,
       `.harness/${sessionName}/runs/`,
     ],

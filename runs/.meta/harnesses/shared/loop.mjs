@@ -52,15 +52,10 @@ async function writeJson(filePath, data) {
   await writeFile(filePath, JSON.stringify(data, null, 2) + '\n', 'utf8');
 }
 
-// --- Resolver session ativa ---
+// --- Resolver session ---
 async function resolveSession(harnessDir, explicitSession) {
   if (explicitSession) return explicitSession;
-
-  const activePath = join(harnessDir, 'active');
-  if (await fileExists(activePath)) {
-    return (await readFile(activePath, 'utf8')).trim();
-  }
-  throw new Error('Nenhuma session ativa. Passe o nome da session como argumento ou escreva em .harness/active.');
+  throw new Error('Session obrigatória. Passe o nome da session como argumento: node loop.mjs <session>');
 }
 
 // --- Carregar config da session ---
@@ -453,8 +448,9 @@ async function main() {
     next.status = 'in_progress';
     await saveFeatures(featuresPath, features);
 
-    // Criar metadata da feature run
+    // Criar metadata da feature run (escrita ANTES do spawn para visibilidade no dashboard)
     const startedAt = now();
+    const runMetaPath = join(runsDir, `${featureId}.json`);
     const runMeta = {
       feature_id: featureId,
       started_at: startedAt,
@@ -463,6 +459,7 @@ async function main() {
       exit_code: null,
       retries: next.retries || 0,
     };
+    await writeJson(runMetaPath, runMeta);
 
     // Atualizar loop state → running
     await writeJson(loopStatePath, makeLoopState({
@@ -488,17 +485,18 @@ async function main() {
         runsDir,
         promptPath,
         workspace,
+        session,
       });
     } catch (err) {
       console.error(`${RED}Erro ao spawnar agente para ${featureId}: ${err.message}${NC}`);
       agentResult = { code: 1, pid: 0 };
     }
 
-    // Atualizar metadata da feature run
+    // Atualizar metadata da feature run (com dados finais)
     runMeta.finished_at = now();
     runMeta.agent_pid = agentResult.pid || null;
     runMeta.exit_code = agentResult.code ?? null;
-    await writeJson(join(runsDir, `${featureId}.json`), runMeta);
+    await writeJson(runMetaPath, runMeta);
 
     // Reler features.json — verificar status
     features = await loadFeatures(featuresPath);
@@ -639,19 +637,20 @@ main().catch(async err => {
   console.error(err.stack);
   try {
     const harnessDir = join(resolve('.'), '.harness');
-    const activePath = join(harnessDir, 'active');
-    const session = (await readFile(activePath, 'utf8')).trim();
-    const config = JSON.parse(await readFile(join(harnessDir, session, 'config.json'), 'utf8'));
-    const progressPath = join(harnessDir, session, 'progress.txt');
-    await notifyWebhooks(config, progressPath, 'error', {
-      feature_id: null,
-      feature_title: null,
-      iteration: 0,
-      features_done: 0,
-      features_total: 0,
-      exit_reason: 'error',
-      error_message: err.message,
-    });
+    const session = process.argv[2] || '';
+    if (session) {
+      const config = JSON.parse(await readFile(join(harnessDir, session, 'config.json'), 'utf8'));
+      const progressPath = join(harnessDir, session, 'progress.txt');
+      await notifyWebhooks(config, progressPath, 'error', {
+        feature_id: null,
+        feature_title: null,
+        iteration: 0,
+        features_done: 0,
+        features_total: 0,
+        exit_reason: 'error',
+        error_message: err.message,
+      });
+    }
   } catch {
     // Se não conseguir notificar, não impede o exit
   }

@@ -33,6 +33,7 @@ async function main() {
   const { values } = parseArgs({
     options: {
       workspace: { type: 'string' },
+      session: { type: 'string' },
       force: { type: 'boolean', default: false },
     },
     strict: true,
@@ -42,21 +43,13 @@ async function main() {
     console.error(JSON.stringify({ error: '--workspace é obrigatório' }));
     process.exit(1);
   }
+  if (!values.session) {
+    console.error(JSON.stringify({ error: '--session é obrigatório' }));
+    process.exit(1);
+  }
 
   const workspace = resolve(values.workspace);
-
-  // Ler session ativa de .harness/active
-  const activePath = join(workspace, '.harness', 'active');
-  if (!await fileExists(activePath)) {
-    console.error(JSON.stringify({ error: `.harness/active não encontrado em ${workspace}` }));
-    process.exit(1);
-  }
-
-  const session = (await readFile(activePath, 'utf8')).trim();
-  if (!session) {
-    console.error(JSON.stringify({ error: '.harness/active está vazio' }));
-    process.exit(1);
-  }
+  const session = values.session;
 
   // Ler config da session para obter harness type
   const configPath = join(workspace, '.harness', session, 'config.json');
@@ -77,7 +70,7 @@ async function main() {
     process.exit(1);
   }
 
-  const args = [initScript];
+  const args = [initScript, '--session', session];
   if (values.force) args.push('--force');
 
   const proc = spawn('node', args, {

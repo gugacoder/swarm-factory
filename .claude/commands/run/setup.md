@@ -15,10 +15,13 @@ Prepara a workspace de um run e executa o Initializer Agent.
    ```
    node runs/.meta/api/get-status.mjs --slug X --format json
    ```
-4. Execute o initializer no workspace:
+4. Execute o initializer no workspace via exec-setup-harness (substitui `{session}` e injeta config):
 
-   - **claude-code**: `cd {workspace} && claude -p "$(cat .claude/commands/vibe/initialize.md)" --allowedTools "Edit,Write,Bash,Read,Glob,Grep"`
-   - **codex**: `cd {workspace} && codex exec --full-auto --skip-git-repo-check - < .claude/commands/vibe/initialize.md`
+   ```bash
+   node runs/.meta/tools/exec-setup-harness.mjs --workspace {workspace} --session {session_name} [--force]
+   ```
+
+   O `session_name` vem do output do init-workspace (passo 2).
 
 5. Reporte: quantas features criadas, primeira feature, próximos passos (`/run:loop` ou `/run:code`)
 

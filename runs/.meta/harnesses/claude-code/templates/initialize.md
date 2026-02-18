@@ -5,7 +5,6 @@ Você é o INITIALIZER AGENT para um projeto long-running com agent harness.
 ## Contexto do Run
 
 - Arquivo `.harness/{session}/config.json` contém a configuração do run (incluindo `specs`)
-- Arquivo `.harness/active` contém o nome da session/milestone
 
 ## Passo 1 — Absorver Contexto
 
@@ -13,8 +12,7 @@ Leia TODOS estes arquivos antes de qualquer ação:
 
 ### Identifique a sessão e configuração:
 ```bash
-cat .harness/active
-cat .harness/$(cat .harness/active)/config.json
+cat .harness/{session}/config.json
 ```
 
 ### Especificação (use o `specs` de config.json):
@@ -28,8 +26,6 @@ cat .harness/$(cat .harness/active)/config.json
 - Leia arquivos de configuração da raiz (package.json, docker-compose*.yml, ou equivalentes)
 - Explore a estrutura de diretórios do projeto (`ls` na raiz e subpastas principais)
 - Se `.harness/{session}/features.json` já existir, leia-o — esta pode ser uma onda adicional
-
-Onde `{session}` é o conteúdo de `.harness/active`.
 
 ## Passo 2 — Criar/Atualizar Harness
 

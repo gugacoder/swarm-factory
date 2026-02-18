@@ -14,7 +14,8 @@ import { spawn } from 'node:child_process';
 import { access, readFile } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { parseArgs } from 'node:util';
-import { openSync } from 'node:fs';
+import { openSync, existsSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 
 async function fileExists(filePath) {
   try {
@@ -29,6 +30,7 @@ async function main() {
   const { values } = parseArgs({
     options: {
       workspace: { type: 'string' },
+      session: { type: 'string' },
       'max-turns': { type: 'string' },
       'max-features': { type: 'string' },
     },
@@ -39,21 +41,13 @@ async function main() {
     console.error(JSON.stringify({ error: '--workspace é obrigatório' }));
     process.exit(1);
   }
+  if (!values.session) {
+    console.error(JSON.stringify({ error: '--session é obrigatório' }));
+    process.exit(1);
+  }
 
   const workspace = resolve(values.workspace);
-
-  // Ler session ativa de .harness/active
-  const activePath = join(workspace, '.harness', 'active');
-  if (!await fileExists(activePath)) {
-    console.error(JSON.stringify({ error: `.harness/active não encontrado em ${workspace}` }));
-    process.exit(1);
-  }
-
-  const session = (await readFile(activePath, 'utf8')).trim();
-  if (!session) {
-    console.error(JSON.stringify({ error: '.harness/active está vazio' }));
-    process.exit(1);
-  }
+  const session = values.session;
 
   const loopScript = join(workspace, '.harness', 'scripts', 'loop.mjs');
   if (!await fileExists(loopScript)) {
@@ -66,22 +60,31 @@ async function main() {
   if (values['max-turns']) env.MAX_TURNS = values['max-turns'];
   if (values['max-features']) env.MAX_FEATURES = values['max-features'];
 
-  // Preparar log file em .harness/{session}/loop-output.log
-  const logPath = join(workspace, '.harness', session, 'loop-output.log');
-  const logFd = openSync(logPath, 'a');
-
   // Spawnar detached com session como argumento
-  const proc = spawn('node', [loopScript, session], {
-    cwd: workspace,
-    env,
-    stdio: ['ignore', logFd, logFd],
-    detached: true,
-    shell: true,
-  });
+  const logPath = join(workspace, '.harness', session, 'loop-output.log');
+  let pid;
 
-  proc.unref();
+  if (process.platform === 'win32') {
+    // Windows: wscript.exe + VBS para evitar janela de console
+    const vbsPath = join(tmpdir(), 'swarm-run-hidden.vbs');
+    if (!existsSync(vbsPath)) {
+      writeFileSync(vbsPath, 'CreateObject("Wscript.Shell").Run WScript.Arguments(0), 0, False\n');
+    }
+    const fullCmd = [process.execPath, loopScript, session].map(a => a.includes(' ') ? `"${a}"` : a).join(' ');
+    spawn('wscript.exe', [vbsPath, fullCmd], { cwd: workspace, env, stdio: 'ignore' });
+    // PID real será reportado pelo loop.mjs em loop.json
+  } else {
+    const logFd = openSync(logPath, 'a');
+    const proc = spawn('node', [loopScript, session], {
+      cwd: workspace,
+      env,
+      stdio: ['ignore', logFd, logFd],
+      detached: true,
+    });
+    proc.unref();
+    pid = proc.pid;
+  }
 
-  const pid = proc.pid;
   console.log(JSON.stringify({
     pid,
     workspace,

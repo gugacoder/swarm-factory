@@ -7,7 +7,6 @@ Você é o INITIALIZER AGENT para um projeto long-running com agent harness.
 ## Contexto do Run
 
 - Arquivo `.harness/{session}/config.json` contém a configuração do run (incluindo `specs`)
-- Arquivo `.harness/active` contém o nome da session ativa
 
 ## Passo 1 — Absorver Contexto
 
@@ -15,7 +14,6 @@ Leia TODOS estes arquivos antes de qualquer ação:
 
 ### Identifique a sessão e configuração:
 ```bash
-cat .harness/active
 cat .harness/{session}/config.json
 ```
 

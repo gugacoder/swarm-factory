@@ -50,41 +50,80 @@ function isPidRunning(pid) {
 }
 
 /**
+ * Descobre sessions disponíveis em .harness/ (diretórios com config.json).
+ * @param {string} harnessDir
+ * @returns {Promise<string[]>} nomes das sessions
+ */
+async function discoverSessions(harnessDir) {
+  const { readdir } = await import('node:fs/promises');
+  try {
+    const entries = await readdir(harnessDir, { withFileTypes: true });
+    const sessions = [];
+    for (const entry of entries) {
+      if (entry.isDirectory() && entry.name !== 'scripts') {
+        const configPath = join(harnessDir, entry.name, 'config.json');
+        if (await exists(configPath)) {
+          sessions.push(entry.name);
+        }
+      }
+    }
+    return sessions;
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Lê features e loop state da estrutura .harness/.
+ * Descobre a session com loop ativo, ou usa a mais recente.
  * @param {string} workspace
  * @returns {Promise<{features: string|null, loopState: object|null, session: string|null}|null>}
  */
 async function readHarnessArtifacts(workspace) {
   const harnessDir = join(workspace, '.harness');
-  const activePath = join(harnessDir, 'active');
+  if (!await exists(harnessDir)) return null;
 
-  if (!await exists(activePath)) return null;
+  const sessions = await discoverSessions(harnessDir);
+  if (sessions.length === 0) return null;
 
-  const session = (await readFile(activePath, 'utf8')).trim();
-  if (!session) return null;
+  // Procurar session com loop ativo, senão usar a última
+  let bestSession = null;
+  let bestLoopState = null;
+  let bestFeatures = null;
 
-  const sessionDir = join(harnessDir, session);
-  if (!await exists(sessionDir)) return null;
+  for (const session of sessions) {
+    const sessionDir = join(harnessDir, session);
+    let loopState = null;
+    const loopPath = join(sessionDir, 'loop.json');
+    if (await exists(loopPath)) {
+      try {
+        loopState = JSON.parse(await readFile(loopPath, 'utf8'));
+      } catch { /* ignore */ }
+    }
 
-  // Ler features.json
+    // Se tem loop ativo (running/between), priorizar
+    if (loopState && loopState.pid && isPidRunning(loopState.pid)) {
+      let featuresContent = null;
+      const featuresPath = join(sessionDir, 'features.json');
+      if (await exists(featuresPath)) {
+        try { featuresContent = await readFile(featuresPath, 'utf8'); } catch { /* ignore */ }
+      }
+      return { features: featuresContent, loopState, session };
+    }
+
+    // Guardar como candidato (último da lista)
+    bestSession = session;
+    bestLoopState = loopState;
+  }
+
+  // Usar última session encontrada
   let featuresContent = null;
-  const featuresPath = join(sessionDir, 'features.json');
+  const featuresPath = join(harnessDir, bestSession, 'features.json');
   if (await exists(featuresPath)) {
-    try {
-      featuresContent = await readFile(featuresPath, 'utf8');
-    } catch { /* ignore */ }
+    try { featuresContent = await readFile(featuresPath, 'utf8'); } catch { /* ignore */ }
   }
 
-  // Ler loop.json
-  let loopState = null;
-  const loopPath = join(sessionDir, 'loop.json');
-  if (await exists(loopPath)) {
-    try {
-      loopState = JSON.parse(await readFile(loopPath, 'utf8'));
-    } catch { /* ignore */ }
-  }
-
-  return { features: featuresContent, loopState, session };
+  return { features: featuresContent, loopState: bestLoopState, session: bestSession };
 }
 
 /**

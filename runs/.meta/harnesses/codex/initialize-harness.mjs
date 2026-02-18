@@ -45,6 +45,7 @@ async function readJson(filePath) {
 async function main() {
   const { values } = parseArgs({
     options: {
+      session: { type: 'string' },
       force: { type: 'boolean', default: false },
       append: { type: 'boolean', default: false },
     },
@@ -56,16 +57,10 @@ async function main() {
   console.log(`${CYAN}=======================================${NC}`);
   console.log('');
 
-  // 1. Ler session ativa de .harness/active
-  const activePath = resolve('.harness', 'active');
-  if (!await fileExists(activePath)) {
-    console.error(`${RED}.harness/active não encontrado no diretório corrente.${NC}`);
-    process.exit(1);
-  }
-
-  const session = (await readFile(activePath, 'utf8')).trim();
+  // 1. Resolver session via argumento --session
+  const session = values.session || '';
   if (!session) {
-    console.error(`${RED}.harness/active está vazio.${NC}`);
+    console.error(`${RED}--session é obrigatório. Uso: node initialize-harness.mjs --session <nome>${NC}`);
     process.exit(1);
   }
 
@@ -123,7 +118,11 @@ async function main() {
   console.log(`${CYAN}Spawnando initializer agent (Codex)...${NC}`);
   console.log('');
 
-  const initPrompt = await readFile(commandPath, 'utf8');
+  // Ler template e substituir {session} pelo nome real da sessão
+  const rawPrompt = await readFile(commandPath, 'utf8');
+  const configContent = JSON.stringify(config, null, 2);
+  const initPrompt = rawPrompt.replace(/\{session\}/g, session)
+    + `\n\n## Configuração da sessão (config.json)\n\nSessão: \`${session}\`\n\n\`\`\`json\n${configContent}\n\`\`\`\n`;
 
   const model = process.env.MODEL || config.agent?.model || '';
   const args = ['--approval-mode', 'full-auto', '-q', initPrompt];

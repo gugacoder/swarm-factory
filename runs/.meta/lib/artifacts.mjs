@@ -11,7 +11,6 @@ const DEFAULT_ARTIFACTS = {
   scripts_dir:    { type: 'dir',  path: './.harness/scripts' },
   prompt:         { type: 'file', path: './.harness/prompt.md' },
   learnings:      { type: 'file', path: './.harness/learnings.md' },
-  active:         { type: 'file', path: './.harness/active' },
   session_dir:    { type: 'dir',  path: './.harness/{session}' },
   config:         { type: 'file', path: './.harness/{session}/config.json' },
   features:       { type: 'file', path: './.harness/{session}/features.json' },

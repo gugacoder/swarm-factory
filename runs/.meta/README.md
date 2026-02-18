@@ -104,8 +104,8 @@ MAX_FEATURES=1 node .harness/scripts/loop.mjs
 
 ```bash
 cd /home/user/meu-app
-node .harness/scripts/loop.mjs                  # Session de .harness/active
-node .harness/scripts/loop.mjs 09-checklist     # Session explícita
+node .harness/scripts/loop.mjs <session>         # Session obrigatória
+node .harness/scripts/loop.mjs 09-checklist     # Exemplo
 ```
 
 Loop executa até:
@@ -448,7 +448,6 @@ workspace/
 │   │   └── init.mjs                       # spawna initializer agent (per-harness)
 │   ├── prompt.md                          # prompt do coder agent
 │   ├── learnings.md                       # lições cross-milestone
-│   ├── active                             # string → "08-precificacao"
 │   └── {session}/                         # session = milestone
 │       ├── config.json                    # {slug, project, session_name, specs, agent}
 │       ├── features.json
@@ -626,7 +625,7 @@ Registros no `progress.txt`:
 
 ### Loop não inicia
 
-Verifique se `.harness/` existe no workspace com `active` apontando para uma session válida. Execute `initWorkspace()` antes de rodar o loop.
+Verifique se `.harness/` existe no workspace com pelo menos uma session (diretório com `config.json`). Execute `initWorkspace()` antes de rodar o loop. Passe o nome da session como argumento: `node .harness/scripts/loop.mjs <session>`.
 
 ### Feature bloqueada permanentemente
 
