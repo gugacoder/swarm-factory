@@ -1,0 +1,58 @@
+{
+  "slug": "ciaprimecare-02-dashboard--cc",
+  "name": "CiaPrimeCare — 02-dashboard",
+  "description": null,
+  "specs": "src/app/hub/-project-new-laf/milestone/02-dashboard",
+  "workspace": "D:/sources/codr.studio/cia-prime-care/CiaPrimeCare/CiaAngular",
+  "agent": {
+    "harness": "claude-code",
+    "max_turns": 50,
+    "max_retries": 5
+  },
+  "artifacts": {
+    "harness_dir": {
+      "type": "dir",
+      "path": "./.harness"
+    },
+    "scripts_dir": {
+      "type": "dir",
+      "path": "./.harness/scripts"
+    },
+    "prompt": {
+      "type": "file",
+      "path": "./.harness/prompt.md"
+    },
+    "learnings": {
+      "type": "file",
+      "path": "./.harness/learnings.md"
+    },
+    "active": {
+      "type": "file",
+      "path": "./.harness/active"
+    },
+    "session_dir": {
+      "type": "dir",
+      "path": "./.harness/{session}"
+    },
+    "config": {
+      "type": "file",
+      "path": "./.harness/{session}/config.json"
+    },
+    "features": {
+      "type": "file",
+      "path": "./.harness/{session}/features.json"
+    },
+    "progress": {
+      "type": "file",
+      "path": "./.harness/{session}/progress.txt"
+    },
+    "loop_state": {
+      "type": "file",
+      "path": "./.harness/{session}/loop.json"
+    },
+    "runs_dir": {
+      "type": "dir",
+      "path": "./.harness/{session}/runs"
+    }
+  }
+}

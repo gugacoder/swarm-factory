@@ -1,0 +1,54 @@
+{
+  "slug": "agenticbackbone-10-kai-provider-registry--cc",
+  "name": "agentic-backbone — 10-kai-provider-registry",
+  "description": null,
+  "specs": "apps/backbone/milestones/10-kai-provider-registry",
+  "workspace": "D:/sources/codr.studio/cia-prime-care/agentic-backbone",
+  "agent": {
+    "harness": "claude-code",
+    "max_turns": 200,
+    "max_retries": 5
+  },
+  "artifacts": {
+    "harness_dir": {
+      "type": "dir",
+      "path": "./.harness"
+    },
+    "scripts_dir": {
+      "type": "dir",
+      "path": "./.harness/scripts"
+    },
+    "prompt": {
+      "type": "file",
+      "path": "./.harness/prompt.md"
+    },
+    "learnings": {
+      "type": "file",
+      "path": "./.harness/learnings.md"
+    },
+    "session_dir": {
+      "type": "dir",
+      "path": "./.harness/{session}"
+    },
+    "config": {
+      "type": "file",
+      "path": "./.harness/{session}/config.json"
+    },
+    "features": {
+      "type": "file",
+      "path": "./.harness/{session}/features.json"
+    },
+    "progress": {
+      "type": "file",
+      "path": "./.harness/{session}/progress.txt"
+    },
+    "loop_state": {
+      "type": "file",
+      "path": "./.harness/{session}/loop.json"
+    },
+    "runs_dir": {
+      "type": "dir",
+      "path": "./.harness/{session}/runs"
+    }
+  }
+}
