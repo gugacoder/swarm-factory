@@ -48,15 +48,26 @@ function ProgressBar({ passing, total }: { passing: number; total: number }) {
 
 export function RunCard({ run, isSelected, onClick }: RunCardProps) {
   const shortName = run.project ?? run.id
+  const isActive = run.loop_state === 'running' || run.loop_state === 'between' || run.loop_state === 'stopping'
 
   return (
     <button
       onClick={onClick}
       className={cn(
         'w-full text-left p-2.5 rounded-lg transition-colors relative',
+        isActive && 'border-l-2',
+        isActive && run.loop_state === 'running' && 'border-l-green-500',
+        isActive && run.loop_state === 'between' && 'border-l-amber-500',
+        isActive && run.loop_state === 'stopping' && 'border-l-red-500',
         isSelected
           ? 'bg-primary text-primary-foreground'
-          : 'hover:bg-muted'
+          : isActive && run.loop_state === 'running'
+            ? 'bg-green-500/5 hover:bg-green-500/10'
+            : isActive && run.loop_state === 'between'
+              ? 'bg-amber-500/5 hover:bg-amber-500/10'
+              : isActive && run.loop_state === 'stopping'
+                ? 'bg-red-500/5 hover:bg-red-500/10'
+                : 'hover:bg-muted'
       )}
     >
       {(run.loop_state === 'running' || run.loop_state === 'between' || run.loop_state === 'stopping') && (
