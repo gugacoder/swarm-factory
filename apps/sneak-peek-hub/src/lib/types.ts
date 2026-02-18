@@ -128,6 +128,7 @@ export interface WorkspaceInfo {
   harness: string
   features: { total: number; passing: number }
   activeSession: string
+  loop_state: LoopState
 }
 
 // --- Harness Session Info ---
@@ -155,6 +156,9 @@ export interface HarnessCreateRequest {
   workspace: string
   specs: string
   harness: string
+  max_turns?: number | null
+  max_iterations?: number | null
+  max_features?: number | null
 }
 
 export interface HarnessCreateResponse {

@@ -185,11 +185,15 @@ export async function harnessInfer(specsPath: string): Promise<HarnessInferRespo
   return res.json()
 }
 
-export async function harnessStart(slug: string): Promise<HarnessStartResponse> {
+export async function harnessStart(slug: string, overrides?: {
+  max_turns?: number | null
+  max_iterations?: number | null
+  max_features?: number | null
+}): Promise<HarnessStartResponse> {
   const res = await fetch('/api/harness/start', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug }),
+    body: JSON.stringify({ slug, ...overrides }),
   })
   if (!res.ok) {
     const data = await res.json().catch(() => ({}))

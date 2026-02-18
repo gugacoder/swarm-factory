@@ -52,3 +52,6 @@ worktrees/
 # Sessions (estado local do workspace)
 .sessions
 .sessions/
+
+# Legacy (migrado para apps/sneak-peek-hub)
+.sneak-peek/

@@ -27,11 +27,11 @@ function checkPidAliveRaw(pid: number): boolean {
     if (e.code === 'EPERM') return true
     if (IS_WIN && e.code === 'ESRCH') {
       try {
-        const out = execSync(`tasklist /FI "PID eq ${pid}" /NH`, { encoding: 'utf-8', timeout: 3000 })
+        const out = execSync(`tasklist /FI "PID eq ${pid}" /NH`, { encoding: 'utf-8', timeout: 3000, windowsHide: true })
         if (out.includes(String(pid))) return true
       } catch { /* continue */ }
       try {
-        const out = execSync(`ps -p ${pid}`, { encoding: 'utf-8', timeout: 3000 })
+        const out = execSync(`ps -p ${pid}`, { encoding: 'utf-8', timeout: 3000, windowsHide: true })
         return out.trim().split('\n').length >= 2
       } catch { /* not found */ }
     }
@@ -147,11 +147,7 @@ interface HarnessPaths {
   runsDir: string
 }
 
-function resolveHarness(ws: string): HarnessPaths | null {
-  const activePath = path.join(ws, '.harness', 'active')
-  const session = readTextSafe(activePath).trim()
-  if (!session) return null
-
+function resolveHarnessSession(ws: string, session: string): HarnessPaths | null {
   const sessionDir = path.join(ws, '.harness', session)
   if (!fs.existsSync(sessionDir)) return null
 
@@ -165,23 +161,6 @@ function resolveHarness(ws: string): HarnessPaths | null {
   }
 }
 
-function detectLoopState(ws: string): { state: string; detail: any | null; alive: boolean; pid: number | null } {
-  const hp = resolveHarness(ws)
-  if (!hp) return { state: 'idle', detail: null, alive: false, pid: null }
-
-  const loopState = readJsonSafe(hp.loopJsonPath)
-  const pid = loopState?.pid ?? null
-  const alive = pid ? checkPidAliveCached(pid) : false
-  const stopping = fs.existsSync(path.join(ws, '.stop'))
-
-  let state = 'idle'
-  if (stopping && alive) state = 'stopping'
-  else if (loopState?.status === 'running' && alive) state = 'running'
-  else if (loopState?.status === 'between' && alive) state = 'between'
-  else if (loopState?.status === 'completed' || loopState?.exit_reason === 'completed') state = 'completed'
-
-  return { state, detail: loopState, alive, pid }
-}
 
 function isValidSessionId(sid: string): boolean {
   return /^[a-zA-Z0-9_.-]+$/.test(sid)
@@ -195,6 +174,7 @@ interface WorkspaceInfo {
   harness: string
   features: { total: number; passing: number }
   activeSession: string
+  loop_state: string
 }
 
 const DISCOVER_TTL_MS = 5000
@@ -226,22 +206,36 @@ function discoverWorkspacesRaw(runsDir: string): WorkspaceInfo[] {
         if (!config.workspace) continue
         const wsPath = resolveWorkspacePath(runsDir, config.workspace)
         if (!wsPath || !fs.existsSync(wsPath)) continue
-        // Must have .harness/active
-        if (!fs.existsSync(path.join(wsPath, '.harness', 'active'))) continue
+        // Must have .harness/ dir
+        if (!fs.existsSync(path.join(wsPath, '.harness'))) continue
+        const slug = config.slug || entry.replace('.json', '')
 
-        const hp = resolveHarness(wsPath)
-        const activeSession = hp?.session || ''
+        // Slug é o nome da pasta em .harness/ — sem fallback
+        const hp = resolveHarnessSession(wsPath, slug)
         const featuresRaw = hp ? readJsonSafe(hp.featuresPath) : null
         const features = Array.isArray(featuresRaw) ? featuresRaw : (featuresRaw?.features ?? [])
         const passing = features.filter((f: any) => f.status === 'passing').length
 
+        let loopStateStr = 'idle'
+        if (hp) {
+          const loopJson = readJsonSafe(hp.loopJsonPath)
+          const lpid = loopJson?.pid ?? null
+          const lalive = lpid ? checkPidAliveCached(lpid) : false
+          const lstopping = fs.existsSync(path.join(wsPath, '.stop'))
+          if (lstopping && lalive) loopStateStr = 'stopping'
+          else if (loopJson?.status === 'running' && lalive) loopStateStr = 'running'
+          else if (loopJson?.status === 'between' && lalive) loopStateStr = 'between'
+          else if (loopJson?.status === 'completed' || loopJson?.exit_reason === 'completed') loopStateStr = 'completed'
+        }
+
         results.push({
-          slug: config.slug || entry.replace('.json', ''),
+          slug,
           name: config.name || config.slug || entry.replace('.json', ''),
           workspace: wsPath,
           harness: config.agent?.harness || 'unknown',
           features: { total: features.length, passing },
-          activeSession,
+          activeSession: hp?.session || '',
+          loop_state: loopStateStr,
         })
       } catch { /* skip */ }
     }
@@ -259,23 +253,37 @@ function discoverWorkspacesRaw(runsDir: string): WorkspaceInfo[] {
         if (!config.workspace) continue
         const wsPath = resolveWorkspacePath(runsDir, config.workspace)
         if (!wsPath || !fs.existsSync(wsPath)) continue
-        // Must have .harness/active
-        if (!fs.existsSync(path.join(wsPath, '.harness', 'active'))) continue
-        if (results.some(r => r.workspace === wsPath)) continue
+        // Must have .harness/ dir
+        if (!fs.existsSync(path.join(wsPath, '.harness'))) continue
+        const slug = config.slug || entry.name
+        if (results.some(r => r.slug === slug)) continue
 
-        const hp = resolveHarness(wsPath)
-        const activeSession = hp?.session || ''
+        // Slug é o nome da pasta em .harness/ — sem fallback
+        const hp = resolveHarnessSession(wsPath, slug)
         const featuresRaw = hp ? readJsonSafe(hp.featuresPath) : null
         const features = Array.isArray(featuresRaw) ? featuresRaw : (featuresRaw?.features ?? [])
         const passing = features.filter((f: any) => f.status === 'passing').length
 
+        let loopStateStr = 'idle'
+        if (hp) {
+          const loopJson = readJsonSafe(hp.loopJsonPath)
+          const lpid = loopJson?.pid ?? null
+          const lalive = lpid ? checkPidAliveCached(lpid) : false
+          const lstopping = fs.existsSync(path.join(wsPath, '.stop'))
+          if (lstopping && lalive) loopStateStr = 'stopping'
+          else if (loopJson?.status === 'running' && lalive) loopStateStr = 'running'
+          else if (loopJson?.status === 'between' && lalive) loopStateStr = 'between'
+          else if (loopJson?.status === 'completed' || loopJson?.exit_reason === 'completed') loopStateStr = 'completed'
+        }
+
         results.push({
-          slug: config.slug || entry.name,
+          slug,
           name: config.name || config.slug || entry.name,
           workspace: wsPath,
           harness: config.agent?.harness || 'unknown',
           features: { total: features.length, passing },
-          activeSession,
+          activeSession: hp?.session || '',
+          loop_state: loopStateStr,
         })
       } catch { /* skip */ }
     }
@@ -366,15 +374,40 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
   return {
     name: 'sneak-peek-api',
     configureServer(server) {
-      // Helper: resolve workspace from slug query param or fallback to activeWorkspace
-      const wsFromReq = (req: any): string => {
+      // Helper: resolve workspace + slug from query param or fallback to activeWorkspace
+      const ctxFromReq = (req: any): { ws: string; slug: string | null } => {
         const url = new URL(req.url!, `http://${req.headers.host}`)
         const slug = url.searchParams.get('slug')
         if (slug) {
           const resolved = resolveSlug(runsDir, slug)
-          if (resolved) return resolved.workspace
+          if (resolved) return { ws: resolved.workspace, slug }
         }
-        return activeWorkspace
+        return { ws: activeWorkspace, slug: null }
+      }
+
+      // Resolve harness paths: slug é o nome da pasta dentro de .harness/, sem fallback
+      const resolveHarnessForSlug = (ws: string, slug: string | null): HarnessPaths | null => {
+        if (!slug) return null
+        return resolveHarnessSession(ws, slug)
+      }
+
+      // Detect loop state for a specific slug/session
+      const detectLoopStateForSlug = (ws: string, slug: string | null): ReturnType<typeof detectLoopState> => {
+        const hp = resolveHarnessForSlug(ws, slug)
+        if (!hp) return { state: 'idle', detail: null, alive: false, pid: null }
+
+        const loopState = readJsonSafe(hp.loopJsonPath)
+        const pid = loopState?.pid ?? null
+        const alive = pid ? checkPidAliveCached(pid) : false
+        const stopping = fs.existsSync(path.join(ws, '.stop'))
+
+        let state = 'idle'
+        if (stopping && alive) state = 'stopping'
+        else if (loopState?.status === 'running' && alive) state = 'running'
+        else if (loopState?.status === 'between' && alive) state = 'between'
+        else if (loopState?.status === 'completed' || loopState?.exit_reason === 'completed') state = 'completed'
+
+        return { state, detail: loopState, alive, pid }
       }
 
       // GET /api/workspaces — list available workspaces
@@ -387,9 +420,9 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
       // GET /api/config — read .harness/{session}/config.json
       server.middlewares.use('/api/config', (req, res, next) => {
         if (req.method !== 'GET') return next()
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
-        if (!hp) return sendJson(res, { error: '.harness/active não encontrado' }, 404)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
+        if (!hp) return sendJson(res, { error: '.harness/{slug}/ não encontrado' }, 404)
         const config = readJsonSafe(hp.configPath)
         if (!config) return sendJson(res, { error: 'config.json não encontrado' }, 404)
         sendJson(res, { config })
@@ -398,16 +431,16 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
       // GET /api/state — loop state from loop.json
       server.middlewares.use('/api/state', (req, res, next) => {
         if (req.method !== 'GET') return next()
-        const ws = wsFromReq(req)
-        const { state, detail, alive, pid } = detectLoopState(ws)
+        const { ws, slug } = ctxFromReq(req)
+        const { state, detail, alive, pid } = detectLoopStateForSlug(ws, slug)
         sendJson(res, { state, detail, pid, alive })
       })
 
       // GET /api/features — read .harness/{session}/features.json
       server.middlewares.use('/api/features', (req, res, next) => {
         if (req.method !== 'GET') return next()
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
         const raw = hp ? readJsonSafe(hp.featuresPath) : null
         const features = Array.isArray(raw) ? raw : (raw?.features ?? [])
         const summary: Record<string, number> = {}
@@ -418,8 +451,8 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
       // GET /api/progress — read .harness/{session}/progress.txt
       server.middlewares.use('/api/progress', (req, res, next) => {
         if (req.method !== 'GET') return next()
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
         const url = new URL(req.url!, `http://${req.headers.host}`)
         const lines = parseInt(url.searchParams.get('lines') || '200', 10)
         const progressPath = hp?.progressPath || path.join(ws, '.harness', 'unknown', 'progress.txt')
@@ -438,8 +471,8 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const url = new URL(req.url!, `http://${req.headers.host}`)
         if (url.pathname !== '/api/sessions') return next()
 
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
         if (!hp) return sendJson(res, { sessions: [] })
 
         const featureRunsDir = hp.runsDir
@@ -450,6 +483,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const currentFeatureId = loopState?.feature_id || ''
 
         const sessions: any[] = []
+        const seenIds = new Set<string>()
         try {
           const entries = fs.readdirSync(featureRunsDir).filter(e => e.endsWith('.json') && !e.endsWith('.jsonl'))
           for (const entry of entries) {
@@ -458,6 +492,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
             if (!meta) continue
 
             const featureId = entry.replace('.json', '')
+            seenIds.add(featureId)
             const jsonlPath = path.join(featureRunsDir, `${featureId}.jsonl`)
             let outputBytes = 0
             try { outputBytes = fs.statSync(jsonlPath).size } catch { /* ok */ }
@@ -467,17 +502,49 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
               metrics = readJsonlTailWithMetrics(jsonlPath, 5).metrics
             }
 
+            const agentPid = meta.agent_pid ?? meta.pid ?? null
+            const isCurrent = featureId === currentFeatureId
+            // Para sessão em andamento sem agent_pid ainda, usar PID do loop
+            const effectivePid = agentPid || (isCurrent && loopState?.pid ? loopState.pid : null)
+            const alive = effectivePid ? checkPidAliveCached(effectivePid) : false
+
             sessions.push({
               id: featureId,
-              pid: meta.pid ?? null,
-              alive: meta.pid ? checkPidAliveCached(meta.pid) : false,
+              pid: agentPid,
+              alive: !meta.finished_at ? alive : false,
               started_at: meta.started_at ?? null,
               finished_at: meta.finished_at ?? null,
               output_bytes: outputBytes,
-              is_current: featureId === currentFeatureId,
+              is_current: isCurrent,
               metrics,
               exit_code: meta.exit_code ?? null,
               retries: meta.retries ?? null,
+            })
+          }
+        } catch { /* ok */ }
+
+        // Fallback: .jsonl sem .json correspondente (feature em andamento sem metadata)
+        try {
+          const jsonlEntries = fs.readdirSync(featureRunsDir).filter(e => e.endsWith('.jsonl'))
+          for (const entry of jsonlEntries) {
+            const featureId = entry.replace('.jsonl', '')
+            if (seenIds.has(featureId)) continue
+            const jsonlPath = path.join(featureRunsDir, entry)
+            let outputBytes = 0
+            try { outputBytes = fs.statSync(jsonlPath).size } catch { /* ok */ }
+            const isCurrent = featureId === currentFeatureId
+            const loopPid = isCurrent && loopState?.pid ? loopState.pid : null
+            sessions.push({
+              id: featureId,
+              pid: null,
+              alive: loopPid ? checkPidAliveCached(loopPid) : false,
+              started_at: loopState?.started_at ?? null,
+              finished_at: null,
+              output_bytes: outputBytes,
+              is_current: isCurrent,
+              metrics: null,
+              exit_code: null,
+              retries: null,
             })
           }
         } catch { /* ok */ }
@@ -498,9 +565,9 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const sid = match[1]
         if (!isValidSessionId(sid)) return sendJson(res, { error: 'ID de sessão inválido' }, 400)
 
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
-        if (!hp) return sendJson(res, { error: '.harness/active não encontrado' }, 404)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
+        if (!hp) return sendJson(res, { error: '.harness/{slug}/ não encontrado' }, 404)
 
         const tail = parseInt(url.searchParams.get('tail') || '50', 10)
         const sinceByte = url.searchParams.get('since_byte')
@@ -542,7 +609,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
           let repoRoot: string | null = null
           try {
             repoRoot = execSync(`git -C "${specsDir}" rev-parse --show-toplevel`, {
-              encoding: 'utf-8', timeout: 5000
+              encoding: 'utf-8', timeout: 5000, windowsHide: true,
             }).trim().replace(/\\/g, '/')
           } catch { /* git não disponível — continua */ }
 
@@ -573,7 +640,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         if (req.method !== 'POST') return next()
         const body = await readBody(req)
         try {
-          const { slug, name, workspace, specs, harness: harnessType } = JSON.parse(body)
+          const { slug, name, workspace, specs, harness: harnessType, max_turns, max_iterations, max_features } = JSON.parse(body)
           if (!slug || !name || !workspace || !specs || !harnessType) {
             return sendJson(res, { error: 'slug, name, workspace, specs e harness são obrigatórios' }, 400)
           }
@@ -591,10 +658,15 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
               '--harness', harnessType,
               '--format', 'structured',
             ]
+            // null = sem limite → passa 0 para que run.mjs não adicione --max-turns
+            args.push('--max-turns', String(max_turns ?? 0))
+            if (max_iterations != null) args.push('--max-iterations', String(max_iterations))
+            if (max_features != null) args.push('--max-features', String(max_features))
             const proc = spawn(process.execPath, args, {
               cwd: runsDir,
               stdio: ['ignore', 'pipe', 'pipe'],
               env: { ...process.env, RUNS_DIR: runsDir },
+              windowsHide: true,
             })
             let stdout = ''
             let stderr = ''
@@ -638,6 +710,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const proc = spawn(process.execPath, [script, '--slug', slug, '--runs-dir', runsDir], {
           cwd: runsDir,
           stdio: ['ignore', 'pipe', 'pipe'],
+          windowsHide: true,
         })
 
         proc.stdout.on('data', (d: Buffer) => {
@@ -679,9 +752,9 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         }
 
         const wsPath = resolved.workspace
-        const hp = resolveHarness(wsPath)
+        const hp = resolveHarnessForSlug(wsPath, slug)
         if (!hp) {
-          sendJson(res, { error: `.harness/active não encontrado em ${wsPath}` }, 404)
+          sendJson(res, { error: `.harness/{slug}/ não encontrado em ${wsPath}` }, 404)
           return
         }
 
@@ -705,10 +778,11 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
           sendSSE(res, { type: 'log', text: 'features.json e progress resetados.' })
         } catch { /* ok */ }
 
-        const proc = spawn('node', [initScript, '--force'], {
+        const proc = spawn('node', [initScript, '--session', hp.session, '--force'], {
           cwd: wsPath,
           stdio: ['ignore', 'pipe', 'pipe'],
           shell: true,
+          windowsHide: true,
         })
 
         proc.stdout.on('data', (d: Buffer) => {
@@ -742,20 +816,14 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const body = await readBody(req)
         try {
           const parsed = JSON.parse(body)
-          let wsPath: string
+          if (!parsed.slug) return sendJson(res, { error: 'slug é obrigatório' }, 400)
 
-          if (parsed.slug) {
-            const resolved = resolveSlug(runsDir, parsed.slug)
-            if (!resolved) return sendJson(res, { error: `Slug "${parsed.slug}" não encontrado` }, 404)
-            wsPath = resolved.workspace
-          } else if (parsed.workspace) {
-            wsPath = parsed.workspace.replace(/\\/g, '/')
-          } else {
-            return sendJson(res, { error: 'workspace ou slug é obrigatório' }, 400)
-          }
+          const resolved = resolveSlug(runsDir, parsed.slug)
+          if (!resolved) return sendJson(res, { error: `Slug "${parsed.slug}" não encontrado` }, 404)
+          const wsPath = resolved.workspace
 
-          const hp = resolveHarness(wsPath)
-          if (!hp) return sendJson(res, { error: '.harness/active não encontrado' }, 404)
+          const hp = resolveHarnessForSlug(wsPath, parsed.slug)
+          if (!hp) return sendJson(res, { error: `.harness/${parsed.slug}/ não encontrado` }, 404)
 
           const loopScript = path.join(wsPath, '.harness', 'scripts', 'loop.mjs')
           if (!fs.existsSync(loopScript)) {
@@ -779,12 +847,19 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
           const logPath = path.join(wsPath, '.harness', hp.session, 'loop-output.log')
           const logFd = fs.openSync(logPath, 'a')
 
+          // Env overrides para o loop
+          const loopEnv: Record<string, string> = { ...process.env }
+          if (parsed.max_turns != null) loopEnv.MAX_TURNS = String(parsed.max_turns)
+          if (parsed.max_iterations != null) loopEnv.MAX_ITERATIONS = String(parsed.max_iterations)
+          if (parsed.max_features != null) loopEnv.MAX_FEATURES = String(parsed.max_features)
+
           // Spawn loop.mjs with session arg
           const proc = spawn(process.execPath, [loopScript, hp.session], {
             cwd: wsPath,
             stdio: ['ignore', logFd, logFd],
             detached: true,
             windowsHide: true,
+            env: loopEnv,
           })
 
           const pid = proc.pid
@@ -811,24 +886,18 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const body = await readBody(req)
         try {
           const parsed = JSON.parse(body)
-          let wsPath: string
+          if (!parsed.slug) return sendJson(res, { error: 'slug é obrigatório' }, 400)
 
-          if (parsed.slug) {
-            const resolved = resolveSlug(runsDir, parsed.slug)
-            if (!resolved) return sendJson(res, { error: `Slug "${parsed.slug}" não encontrado` }, 404)
-            wsPath = resolved.workspace
-          } else if (parsed.workspace) {
-            wsPath = parsed.workspace.replace(/\\/g, '/')
-          } else {
-            return sendJson(res, { error: 'workspace ou slug é obrigatório' }, 400)
-          }
+          const resolved = resolveSlug(runsDir, parsed.slug)
+          if (!resolved) return sendJson(res, { error: `Slug "${parsed.slug}" não encontrado` }, 404)
+          const wsPath = resolved.workspace
 
           // Write .stop file for graceful shutdown
           const stopFile = path.join(wsPath, '.stop')
           fs.writeFileSync(stopFile, new Date().toISOString(), 'utf-8')
 
           // Read PID from loop.json
-          const hp = resolveHarness(wsPath)
+          const hp = resolveHarnessForSlug(wsPath, parsed.slug)
           const loopState = hp ? readJsonSafe(hp.loopJsonPath) : null
           const pid = loopState?.pid ?? null
           let signalSent = false
@@ -836,7 +905,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
           if (pid) {
             try {
               if (IS_WIN) {
-                execSync(`taskkill /PID ${pid} /T /F`, { timeout: 5000, stdio: 'ignore' })
+                execSync(`taskkill /PID ${pid} /T /F`, { timeout: 5000, stdio: 'ignore', windowsHide: true })
                 signalSent = true
               } else {
                 process.kill(pid, 'SIGTERM')
@@ -855,7 +924,7 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
       // GET /api/harness/sessions — list all sessions in .harness/
       server.middlewares.use('/api/harness/sessions', (req, res, next) => {
         if (req.method !== 'GET') return next()
-        const ws = wsFromReq(req)
+        const { ws } = ctxFromReq(req)
         const result = listHarnessSessions(ws)
         sendJson(res, result)
       })
@@ -866,15 +935,11 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const body = await readBody(req)
         try {
           const { slug, session } = JSON.parse(body)
-          let wsPath: string
+          if (!slug) return sendJson(res, { error: 'slug é obrigatório' }, 400)
 
-          if (slug) {
-            const resolved = resolveSlug(runsDir, slug)
-            if (!resolved) return sendJson(res, { error: `Slug "${slug}" não encontrado` }, 404)
-            wsPath = resolved.workspace
-          } else {
-            wsPath = activeWorkspace
-          }
+          const resolved = resolveSlug(runsDir, slug)
+          if (!resolved) return sendJson(res, { error: `Slug "${slug}" não encontrado` }, 404)
+          const wsPath = resolved.workspace
 
           const sessionDir = path.join(wsPath, '.harness', session)
           if (!fs.existsSync(sessionDir)) {
@@ -902,8 +967,8 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
 
         const wsPath = resolved.workspace
         const wsExists = fs.existsSync(wsPath)
-        const hasHarness = wsExists && fs.existsSync(path.join(wsPath, '.harness', 'active'))
-        const hp = hasHarness ? resolveHarness(wsPath) : null
+        const hp = wsExists ? resolveHarnessForSlug(wsPath, slug) : null
+        const hasHarness = !!hp
         const featuresRaw = hp ? readJsonSafe(hp.featuresPath) : null
         const features = featuresRaw ? (Array.isArray(featuresRaw) ? featuresRaw : (featuresRaw?.features ?? [])) : []
 
@@ -952,8 +1017,8 @@ export function sneakPeekPlugin(defaultWorkspace: string, runsDir: string): Plug
         const specsMatch = url.pathname.match(/^\/api\/specs(?:\/(.+))?$/)
         if (!specsMatch) return next()
 
-        const ws = wsFromReq(req)
-        const hp = resolveHarness(ws)
+        const { ws, slug } = ctxFromReq(req)
+        const hp = resolveHarnessForSlug(ws, slug)
         const config = hp ? readJsonSafe(hp.configPath) : null
         if (!config?.specs) return sendJson(res, { error: 'specs path não configurado' }, 404)
 

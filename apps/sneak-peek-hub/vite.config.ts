@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { sneakPeekPlugin } from './src/plugin'
 
-const workspace = path.resolve(__dirname, '..')
+const workspace = path.resolve(__dirname, '../..')
 const runsDir = path.resolve(workspace, 'runs')
 
 export default defineConfig({
@@ -14,7 +14,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8081,
+    port: 8085,
     host: true,
   },
 })

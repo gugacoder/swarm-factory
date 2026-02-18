@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate, useNavigate, useLocation, useParams, Outlet } from 'react-router-dom'
 import { WorkspaceContext, useWorkspaceProvider } from '@/hooks/useWorkspace'
 import { StatusBar } from '@/components/StatusBar'
@@ -9,7 +8,8 @@ import { PromptPanel } from '@/panels/PromptPanel'
 import { ProgressPanel } from '@/panels/ProgressPanel'
 import { ManagePanel } from '@/panels/ManagePanel'
 import { CreateRunPanel } from '@/panels/CreateRunPanel'
-import { fetchWorkspaces } from '@/lib/api'
+import { DashboardPanel } from '@/panels/DashboardPanel'
+
 import { cn } from '@/lib/utils'
 
 type Tab = 'features' | 'sessions' | 'console' | 'specs' | 'progress' | 'manage'
@@ -123,33 +123,9 @@ function ManageSlugLayout() {
   )
 }
 
-// --- HomeRedirect: fetch workspaces and redirect to first slug ---
+// --- HomeRedirect: always go to /dashboard ---
 function HomeRedirect() {
-  const navigate = useNavigate()
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchWorkspaces().then(data => {
-      if (data.workspaces.length > 0) {
-        navigate(`/features/${data.workspaces[0].slug}`, { replace: true })
-      } else {
-        navigate('/runs/new', { replace: true })
-      }
-      setLoading(false)
-    }).catch(() => {
-      navigate('/runs/new', { replace: true })
-      setLoading(false)
-    })
-  }, [navigate])
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center text-muted-foreground text-sm">
-        Carregando workspaces...
-      </div>
-    )
-  }
-  return null
+  return <Navigate to="/dashboard" replace />
 }
 
 export default function App() {
@@ -192,6 +168,9 @@ export default function App() {
           <Routes>
             {/* Home redirect */}
             <Route path="/" element={<HomeRedirect />} />
+
+            {/* Dashboard */}
+            <Route path="/dashboard" element={<DashboardPanel />} />
 
             {/* Create new run */}
             <Route path="/runs/new" element={<CreateRunPanel />} />

@@ -21,6 +21,12 @@ export function CreateRunPanel() {
   const [workspace, setWorkspace] = useState('')
   const [specs, setSpecs] = useState('')
   const [harness, setHarness] = useState('claude-code')
+  const [maxTurns, setMaxTurns] = useState(200)
+  const [maxTurnsUnlimited, setMaxTurnsUnlimited] = useState(false)
+  const [maxIterations, setMaxIterations] = useState(0)
+  const [maxIterationsUnlimited, setMaxIterationsUnlimited] = useState(true)
+  const [maxFeatures, setMaxFeatures] = useState(0)
+  const [maxFeaturesUnlimited, setMaxFeaturesUnlimited] = useState(true)
   const [creating, setCreating] = useState(false)
   const [createError, setCreateError] = useState('')
 
@@ -44,14 +50,19 @@ export function CreateRunPanel() {
     setCreating(true)
     setCreateError('')
     try {
-      const result = await runCreate({ slug, name, workspace, specs, harness })
+      const result = await runCreate({
+        slug, name, workspace, specs, harness,
+        max_turns: maxTurnsUnlimited ? null : maxTurns,
+        max_iterations: maxIterationsUnlimited ? null : maxIterations,
+        max_features: maxFeaturesUnlimited ? null : maxFeatures,
+      })
       // Redirect to manage page
       navigate(`/runs/${result.slug}/manage`)
     } catch (e: any) {
       setCreateError(e.message)
     }
     setCreating(false)
-  }, [slug, name, workspace, specs, harness, navigate])
+  }, [slug, name, workspace, specs, harness, maxTurns, maxTurnsUnlimited, maxIterations, maxIterationsUnlimited, maxFeatures, maxFeaturesUnlimited, navigate])
 
   return (
     <div className="h-full overflow-auto p-6">
@@ -127,6 +138,40 @@ export function CreateRunPanel() {
                   <option value="codex">Codex</option>
                 </select>
               </div>
+
+              {/* Limites do agente */}
+              <div className="pt-2 border-t border-border">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Limites do agente</p>
+                <div className="grid grid-cols-1 gap-3">
+                  <LimitField
+                    label="Turns por sessão"
+                    hint="Quanto o agente pode trabalhar em cada feature"
+                    value={maxTurns}
+                    onChange={setMaxTurns}
+                    unlimited={maxTurnsUnlimited}
+                    onToggleUnlimited={setMaxTurnsUnlimited}
+                    placeholder="200"
+                  />
+                  <LimitField
+                    label="Iterações do loop"
+                    hint="Quantas vezes o loop roda (features + retries)"
+                    value={maxIterations}
+                    onChange={setMaxIterations}
+                    unlimited={maxIterationsUnlimited}
+                    onToggleUnlimited={setMaxIterationsUnlimited}
+                    placeholder="50"
+                  />
+                  <LimitField
+                    label="Max features"
+                    hint="Quantas features completar antes de parar"
+                    value={maxFeatures}
+                    onChange={setMaxFeatures}
+                    unlimited={maxFeaturesUnlimited}
+                    onToggleUnlimited={setMaxFeaturesUnlimited}
+                    placeholder="10"
+                  />
+                </div>
+              </div>
             </div>
             {createError && (
               <div className="px-3 py-2 rounded-md bg-destructive/10 text-destructive text-sm">{createError}</div>
@@ -166,6 +211,47 @@ function Field({ label, value, onChange, mono }: { label: string; value: string;
           mono && 'font-mono'
         )}
       />
+    </div>
+  )
+}
+
+function LimitField({ label, hint, value, onChange, unlimited, onToggleUnlimited, placeholder }: {
+  label: string
+  hint: string
+  value: number
+  onChange: (v: number) => void
+  unlimited: boolean
+  onToggleUnlimited: (v: boolean) => void
+  placeholder: string
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="text-sm font-medium">{label}</label>
+        <button
+          type="button"
+          onClick={() => onToggleUnlimited(!unlimited)}
+          className={cn(
+            'text-xs px-2 py-0.5 rounded-full border transition-colors',
+            unlimited
+              ? 'bg-primary/10 text-primary border-primary/30'
+              : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+          )}
+        >
+          {unlimited ? '∞ sem limite' : 'limitado'}
+        </button>
+      </div>
+      <p className="text-xs text-muted-foreground mb-1">{hint}</p>
+      {!unlimited && (
+        <input
+          type="number"
+          min={1}
+          value={value || ''}
+          onChange={e => onChange(parseInt(e.target.value, 10) || 0)}
+          placeholder={placeholder}
+          className="w-full px-3 py-2 rounded-md border border-border bg-background text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      )}
     </div>
   )
 }
