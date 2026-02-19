@@ -7,6 +7,7 @@
     "tooling"
   ],
   "scripts": {
+    "kill:all": "kill-port 8100 8101",
     "dev:all": "concurrently -n hub,backbone -c cyan,magenta \"npm run dev:hub\" \"npm run dev:backbone\"",
     "dev:hub": "dotenv -- npm run dev --workspace=apps/hub",
     "dev:sneak-peek": "npm run dev --workspace=apps/sneak-peek-hub",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
-    "dotenv-cli": "^8.0.0"
+    "dotenv-cli": "^8.0.0",
+    "kill-port": "^2.0.1"
   }
 }
