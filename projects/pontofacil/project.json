@@ -1,7 +1,0 @@
-{
-  "name": "PontoFacil",
-  "description": "Sistema de cartão de ponto inteligente para gestão de entregas e motoboys",
-  "milestones": [
-    "01-mvp-cartao-de-ponto"
-  ]
-}
