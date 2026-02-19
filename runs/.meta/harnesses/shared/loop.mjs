@@ -25,6 +25,21 @@ const YELLOW = '\x1b[1;33m';
 const CYAN = '\x1b[0;36m';
 const NC = '\x1b[0m';
 
+// --- Estado global para cleanup em crash ---
+const loopCtx = {
+  featuresPath: '',
+  loopStatePath: '',
+  progressPath: '',
+  featureId: '',
+  loopStartedAt: '',
+  iteration: 0,
+  featuresDone: 0,
+  total: 0,
+  maxIterations: null,
+  maxFeatures: null,
+  cleaning: false,
+};
+
 // --- Utilitários ---
 function now() {
   return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -228,6 +243,71 @@ async function importRunner(harnessDir, harness) {
   throw new Error(`run.mjs não encontrado em ${localRunPath}`);
 }
 
+// --- Emergency cleanup (signal/crash) ---
+async function emergencyCleanup(reason) {
+  if (loopCtx.cleaning) return;
+  loopCtx.cleaning = true;
+
+  console.error(`${RED}[CLEANUP] Loop encerrado inesperadamente: ${reason}${NC}`);
+
+  try {
+    if (loopCtx.featuresPath) {
+      const features = await loadFeatures(loopCtx.featuresPath);
+      for (const f of features) {
+        if (f.status === 'in_progress') {
+          f.status = 'failing';
+          f.retries = (f.retries || 0) + 1;
+        }
+      }
+      await saveFeatures(loopCtx.featuresPath, features);
+    }
+  } catch { /* melhor esforço */ }
+
+  try {
+    if (loopCtx.loopStatePath) {
+      await writeJson(loopCtx.loopStatePath, makeLoopState({
+        status: 'exited',
+        iteration: loopCtx.iteration,
+        max_iterations: loopCtx.maxIterations,
+        max_features: loopCtx.maxFeatures,
+        total: loopCtx.total,
+        done: 0,
+        remaining: loopCtx.total,
+        feature_id: loopCtx.featureId,
+        features_done: loopCtx.featuresDone,
+        started_at: loopCtx.loopStartedAt,
+        exit_reason: reason,
+      }));
+    }
+  } catch { /* melhor esforço */ }
+
+  try {
+    if (loopCtx.progressPath) {
+      const msg = `[${now()}] [CRASH] Loop encerrado: ${reason}` +
+        (loopCtx.featureId ? ` (feature: ${loopCtx.featureId})` : '');
+      await appendProgress(loopCtx.progressPath, msg);
+    }
+  } catch { /* melhor esforço */ }
+}
+
+// Registrar signal handlers
+for (const sig of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+  process.on(sig, async () => {
+    await emergencyCleanup(`signal_${sig}`);
+    process.exit(1);
+  });
+}
+
+process.on('uncaughtException', async (err) => {
+  await emergencyCleanup(`uncaughtException: ${err.message}`);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (reason) => {
+  await emergencyCleanup(`unhandledRejection: ${reason}`);
+  process.exit(1);
+});
+
 // --- Main ---
 async function main() {
   const __filename = fileURLToPath(import.meta.url);
@@ -283,10 +363,19 @@ async function main() {
     await unlink(stopFile);
   }
 
+  // Populate loopCtx para cleanup em crash
+  loopCtx.featuresPath = featuresPath;
+  loopCtx.loopStatePath = loopStatePath;
+  loopCtx.progressPath = progressPath;
+  loopCtx.maxIterations = maxIterations || null;
+  loopCtx.maxFeatures = maxFeatures || null;
+
   // Estado inicial
   const loopStartedAt = now();
+  loopCtx.loopStartedAt = loopStartedAt;
   let features = await loadFeatures(featuresPath);
   const total = features.length;
+  loopCtx.total = total;
   const counts = countByStatus(features);
 
   const limitLabel = maxIterations === 0 ? '∞' : String(maxIterations);
@@ -438,6 +527,8 @@ async function main() {
     }
 
     const featureId = next.id;
+    loopCtx.featureId = featureId;
+    loopCtx.iteration = iteration;
     const currentCounts = countByStatus(features);
     const done = currentCounts.passing;
     const remaining = total - done;
@@ -504,6 +595,7 @@ async function main() {
 
     if (updatedFeature && updatedFeature.status === 'passing') {
       featuresDone++;
+      loopCtx.featuresDone = featuresDone;
       console.log(`${GREEN}Feature ${featureId} → passing${NC}`);
       await notifyWebhooks(config, progressPath, 'feature_done', {
         feature_id: featureId,
@@ -556,6 +648,9 @@ async function main() {
         }
       }
     }
+
+    // Limpar featureId do ctx (feature processada)
+    loopCtx.featureId = '';
 
     // Atualizar loop state → between
     await writeJson(loopStatePath, makeLoopState({
