@@ -14,6 +14,7 @@ import kaiRoutes from './routes/kai.js';
 import notificationRoutes from './routes/notifications.js';
 import settingsRoutes from './routes/settings.js';
 import onboardingRoutes from './routes/onboarding.js';
+import factoryRoutes from './routes/factory.js';
 
 const app = new Hono();
 
@@ -68,5 +69,8 @@ app.route('/api/settings', settingsRoutes);
 
 // Onboarding
 app.route('/api/onboarding', onboardingRoutes);
+
+// Factory — monitoramento e controle de workspaces/runs
+app.route('/api/factory', factoryRoutes);
 
 export default app;
