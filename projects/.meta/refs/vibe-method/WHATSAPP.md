@@ -765,7 +765,7 @@ services:
     image: evoapicloud/evolution-api:v2.3.7
     environment:
       DATABASE_PROVIDER: postgresql
-      DATABASE_CONNECTION_URI: postgres://admin:Admin123@postgres:5432/evolution
+      DATABASE_CONNECTION_URI: postgres://admin:12345678@postgres:5432/evolution
       CACHE_REDIS_ENABLED: "true"
       CACHE_REDIS_URI: redis://redis:6379
       AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}

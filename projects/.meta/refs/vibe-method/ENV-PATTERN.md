@@ -58,11 +58,11 @@ PROJECT=meuapp
 
 # Database (credenciais internas - seguras por isolamento Docker)
 POSTGRES_USER=admin
-POSTGRES_PASSWORD=Admin123
+POSTGRES_PASSWORD=12345678
 POSTGRES_DB=main
 
 # URLs internas (padrão Docker)
-DATABASE_URL=postgres://admin:Admin123@postgres.internal:5432/main
+DATABASE_URL=postgres://admin:12345678@postgres.internal:5432/main
 REDIS_URL=redis://redis.internal:6379
 
 # Configs de app
@@ -85,7 +85,7 @@ ENVIRONMENT=development
 NODE_ENV=development
 
 # URLs apontam para localhost (app fora do Docker)
-DATABASE_URL=postgres://admin:Admin123@localhost:9032/main
+DATABASE_URL=postgres://admin:12345678@localhost:9032/main
 REDIS_URL=redis://localhost:9079
 
 # Portal
@@ -105,7 +105,7 @@ ENVIRONMENT=production
 NODE_ENV=production
 
 # URLs usam rede Docker interna (já definidas em .env, mas explícito aqui)
-# DATABASE_URL=postgres://admin:Admin123@postgres.internal:5432/main
+# DATABASE_URL=postgres://admin:12345678@postgres.internal:5432/main
 
 # Portal
 PORTAL_DOMAIN=meuapp.com.br
@@ -190,7 +190,7 @@ Serviços que só existem dentro do Docker Compose:
 
 ```bash
 # .env.{environment} (commitado)
-DATABASE_URL=postgres://admin:Admin123@postgres.internal:5432/main
+DATABASE_URL=postgres://admin:12345678@postgres.internal:5432/main
 REDIS_URL=redis://redis.internal:6379
 INTERNAL_API_KEY=internal-key-12345
 ```
@@ -221,7 +221,7 @@ PostgreSQL requer um **superuser** para criar databases e um **application user*
 │ POSTGRESQL DUAL-USER PATTERN                                │
 │                                                             │
 │ postgres / postgres    ← superuser (cria databases/users)   │
-│ admin / Admin123       ← app user (usado pela aplicação)    │
+│ admin / 12345678       ← app user (usado pela aplicação)    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -230,7 +230,7 @@ PostgreSQL requer um **superuser** para criar databases e um **application user*
 | User | Password | Papel |
 |------|----------|-------|
 | `postgres` | `postgres` | Superuser (root do PostgreSQL) |
-| `admin` | `Admin123` | Usuário de aplicação |
+| `admin` | `12345678` | Usuário de aplicação |
 
 ### init-db.sql
 
@@ -245,7 +245,7 @@ O arquivo `init-db.sql` é executado automaticamente na primeira inicialização
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'admin') THEN
-    CREATE USER admin WITH PASSWORD 'Admin123';
+    CREATE USER admin WITH PASSWORD '12345678';
   END IF;
 END
 $$;
@@ -280,10 +280,10 @@ hub-postgres:
 
 ```bash
 # .env (base) - usado em Docker
-DATABASE_URL=postgresql://admin:Admin123@postgres.internal:5432/main
+DATABASE_URL=postgresql://admin:12345678@postgres.internal:5432/main
 
 # .env.development - usado localmente
-DATABASE_URL=postgresql://admin:Admin123@localhost:9032/main
+DATABASE_URL=postgresql://admin:12345678@localhost:9032/main
 ```
 
 **Nota:** A URL usa o usuário `admin`, não `postgres`. O superuser só é usado para setup inicial.
@@ -657,7 +657,7 @@ loadEnvFile('.env.secrets');        // 3. Secrets (opcional)
 ### PostgreSQL
 
 - [ ] Superuser: `postgres` / `postgres`
-- [ ] App user: `admin` / `Admin123`
+- [ ] App user: `admin` / `12345678`
 - [ ] `init-db.sql` cria usuário `admin` no primeiro boot
 - [ ] `init-db.sql` montado em `/docker-entrypoint-initdb.d/`
 - [ ] `DATABASE_URL` usa `admin`, não `postgres`
