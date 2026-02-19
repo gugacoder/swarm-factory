@@ -49,7 +49,7 @@ export function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@ekai.local"
+                placeholder="admin@mail.com"
                 autoComplete="email"
               />
             </div>

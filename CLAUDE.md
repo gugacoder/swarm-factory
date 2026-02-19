@@ -132,7 +132,7 @@ Brainstorming -> `/derive:specs` -> Specs (requirements, user-stories, design, e
 
 | Email | Senha | Role |
 |---|---|---|
-| admin@ekai.local | admin123 | admin |
+| admin@mail.com | 12345678 | admin |
 
 Seed: `database/seeds/001_admin_user.sql`. Login: `POST /api/auth/login`.
 
@@ -146,6 +146,10 @@ Quando um workspace e criado a partir deste scaffold, ele contem:
 - **infra**: Docker Compose (PostgreSQL, Redis, n8n, Caddy, Evolution, Whisper)
 
 Scripts do scaffold: `dev:all`, `dev:hub`, `dev:backbone`, `build:all`, `migrate`, `platform:up/down`.
+
+## Docker / DB Access
+
+Docker CLI nao funciona neste shell (pipe do Docker Desktop inacessivel no MINGW64) — para queries diretas, usar o terminal do Docker Desktop no container `postgres-1`.
 
 ## Tooling Stack
 

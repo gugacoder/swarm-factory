@@ -71,7 +71,7 @@ Criar os arquivos SQL na ordem abaixo. Cada migration deve ser idempotente (`CRE
 ### Seeds (database/seeds/)
 
 **001_admin_user.sql**
-- Inserir usuario admin com email `admin@ekai.local`, senha `admin123` (hash bcrypt cost 12), role `admin`, active true
+- Inserir usuario admin com email `admin@mail.com`, senha `12345678` (hash bcrypt cost 12), role `admin`, active true
 - Usar `ON CONFLICT (email) DO NOTHING` para idempotencia
 
 ### Verificacao

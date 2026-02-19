@@ -56,7 +56,7 @@ O PRP-001 criou o app Hono em `apps/backbone/` com dependencias jose e bcryptjs.
 
 ### Verificacao
 
-Login com admin@ekai.local / admin123 retorna access token. Access token funciona em rotas protegidas. Refresh renova token. Logout invalida refresh. Rota sem token retorna 401.
+Login com admin@mail.com / 12345678 retorna access token. Access token funciona em rotas protegidas. Refresh renova token. Logout invalida refresh. Rota sem token retorna 401.
 
 ## Limites
 

@@ -36,7 +36,7 @@ function buildDatabaseUrl() {
   const host = process.env.POSTGRES_HOST || 'localhost';
   const port = process.env.EXPORT_POSTGRES_PORT || process.env.POSTGRES_PORT || '5432';
   const user = process.env.POSTGRES_USER || process.env.SYSUSER || 'admin';
-  const pass = process.env.POSTGRES_PASSWORD || process.env.SYSPASS || 'Admin123';
+  const pass = process.env.POSTGRES_PASSWORD || process.env.SYSPASS || '12345678';
   const db = process.env.POSTGRES_DB_MAIN || 'main';
   return `postgres://${user}:${pass}@${host}:${port}/${db}`;
 }

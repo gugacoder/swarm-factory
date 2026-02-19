@@ -12,7 +12,7 @@ async function getToken() {
   const res = await fetch(`${BASE}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@ekai.local', password: 'admin123' }),
+    body: JSON.stringify({ email: 'admin@mail.com', password: '12345678' }),
   });
   const data = await res.json();
   return data.accessToken;

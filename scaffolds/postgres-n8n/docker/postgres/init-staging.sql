@@ -7,8 +7,8 @@
 -- Databases:
 --   - main      -> Aplicacao (Portal, n8n schema)
 --
--- App user: admin/Admin123
--- Demo users: manager, user / Admin123
+-- App user: admin/12345678
+-- Demo users: manager, user / 12345678
 -- ==============================================================================
 
 -- ==============================================================================
@@ -155,9 +155,9 @@ CREATE TRIGGER update_company_config_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- ==============================================================================
--- SEED: Admin User (admin@mail.com / Admin123)
+-- SEED: Admin User (admin@mail.com / 12345678)
 -- ==============================================================================
--- Hash bcrypt de "Admin123"
+-- Hash bcrypt de "12345678"
 INSERT INTO users (id, email, password_hash, name, role, is_active)
 VALUES (
     '11111111-1111-1111-1111-111111111111',
@@ -235,6 +235,6 @@ BEGIN
     RAISE NOTICE '  - manager@mail.com (manager)';
     RAISE NOTICE '  - user@mail.com (user)';
     RAISE NOTICE '';
-    RAISE NOTICE 'Password: Admin123';
+    RAISE NOTICE 'Password: 12345678';
     RAISE NOTICE '============================================';
 END $$;

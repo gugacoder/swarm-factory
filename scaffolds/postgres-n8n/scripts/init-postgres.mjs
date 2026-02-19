@@ -16,7 +16,7 @@
  *   POSTGRES_HOST (default: postgres.internal)
  *   POSTGRES_COMMON_PORT (default: 5432)
  *   POSTGRES_USER (default: admin)
- *   POSTGRES_PASSWORD (default: Admin123)
+ *   POSTGRES_PASSWORD (default: 12345678)
  *   ENVIRONMENT (default: development) - se "staging", carrega demo data
  */
 
@@ -33,10 +33,10 @@ const config = {
   port: parseInt(process.env.POSTGRES_COMMON_PORT || '5432'),
   // Superuser padrão do PostgreSQL para bootstrap
   superuser: 'postgres',
-  superuserPassword: process.env.POSTGRES_PASSWORD || 'Admin123',
+  superuserPassword: process.env.POSTGRES_PASSWORD || '12345678',
   // Usuário do sistema (será criado pelo script)
   user: process.env.POSTGRES_USER || 'admin',
-  password: process.env.POSTGRES_PASSWORD || 'Admin123',
+  password: process.env.POSTGRES_PASSWORD || '12345678',
   environment: process.env.ENVIRONMENT || 'development',
 };
 

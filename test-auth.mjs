@@ -18,13 +18,13 @@ async function test() {
   const loginRes = await fetch(BASE + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@ekai.local', password: 'admin123' })
+    body: JSON.stringify({ email: 'admin@mail.com', password: '12345678' })
   });
   const loginData = await loginRes.json();
   assert('T1a: Login 200', loginRes.status === 200, 'status=' + loginRes.status);
   assert('T1b: accessToken presente', typeof loginData.accessToken === 'string' && loginData.accessToken.length > 0);
   assert('T1c: user.id presente', typeof loginData.user?.id === 'string');
-  assert('T1d: user.email correto', loginData.user?.email === 'admin@ekai.local');
+  assert('T1d: user.email correto', loginData.user?.email === 'admin@mail.com');
   assert('T1e: user.name presente', typeof loginData.user?.name === 'string');
   assert('T1f: user.role=admin', loginData.user?.role === 'admin');
 
@@ -45,7 +45,7 @@ async function test() {
   const badLogin = await fetch(BASE + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@ekai.local', password: 'wrong' })
+    body: JSON.stringify({ email: 'admin@mail.com', password: 'wrong' })
   });
   assert('T2: Login inválido 401', badLogin.status === 401, 'status=' + badLogin.status);
 
@@ -55,7 +55,7 @@ async function test() {
   });
   const meData = await meRes.json();
   assert('T3a: /me 200', meRes.status === 200, 'status=' + meRes.status);
-  assert('T3b: /me retorna email', meData.email === 'admin@ekai.local');
+  assert('T3b: /me retorna email', meData.email === 'admin@mail.com');
   assert('T3c: /me retorna role', meData.role === 'admin');
   assert('T3d: /me retorna id', typeof meData.id === 'string');
 
@@ -107,8 +107,8 @@ async function test() {
   const protectedRes = await fetch(BASE + '/api/projects');
   assert('T9: Rota protegida sem token 401', protectedRes.status === 401, 'status=' + protectedRes.status);
 
-  // T10: bcrypt cost >= 12 (verificado pela senha admin123 validando com sucesso)
-  assert('T10: bcrypt funciona (login com admin123)', loginRes.status === 200);
+  // T10: bcrypt cost >= 12 (verificado pela senha 12345678 validando com sucesso)
+  assert('T10: bcrypt funciona (login com 12345678)', loginRes.status === 200);
 
   // T11: Access token expira em 15 minutos (verificável via JWT decode)
   const tokenParts = accessToken.split('.');
@@ -122,14 +122,14 @@ async function test() {
     await fetch(BASE + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'admin@ekai.local', password: 'admin123' })
+      body: JSON.stringify({ email: 'admin@mail.com', password: '12345678' })
     });
   }
   // 6a requisição de login — deve retornar 429
   const rateLimitRes = await fetch(BASE + '/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: 'admin@ekai.local', password: 'admin123' })
+    body: JSON.stringify({ email: 'admin@mail.com', password: '12345678' })
   });
   assert('T12a: Rate limit 429 na 6a req de login', rateLimitRes.status === 429, 'status=' + rateLimitRes.status);
   const retryAfter = rateLimitRes.headers.get('retry-after');
@@ -151,7 +151,7 @@ async function test() {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + freshToken
     },
-    body: JSON.stringify({ currentPassword: 'admin123', newPassword: 'newpass123' })
+    body: JSON.stringify({ currentPassword: '12345678', newPassword: 'newpass123' })
   });
   const changePwData = await changePwRes.json();
   assert('T13a: Password change 200', changePwRes.status === 200, 'status=' + changePwRes.status);
@@ -170,14 +170,14 @@ async function test() {
 
   // T13d: Verificar que nova senha funciona (esperar rate limit expirar seria necessário,
   // mas podemos verificar que o hash foi atualizado revertendo a senha)
-  // Reverter senha para admin123 usando a nova senha
+  // Reverter senha para 12345678 usando a nova senha
   const revertPw = await fetch(BASE + '/api/auth/password', {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + freshToken
     },
-    body: JSON.stringify({ currentPassword: 'newpass123', newPassword: 'admin123' })
+    body: JSON.stringify({ currentPassword: 'newpass123', newPassword: '12345678' })
   });
   assert('T13d: Reverter senha OK', revertPw.status === 200, 'status=' + revertPw.status);
 
@@ -185,7 +185,7 @@ async function test() {
   const noAuthPw = await fetch(BASE + '/api/auth/password', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ currentPassword: 'admin123', newPassword: 'whatever' })
+    body: JSON.stringify({ currentPassword: '12345678', newPassword: 'whatever' })
   });
   assert('T14: Password change sem auth 401', noAuthPw.status === 401, 'status=' + noAuthPw.status);
 
@@ -196,7 +196,7 @@ async function test() {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ' + freshToken
     },
-    body: JSON.stringify({ currentPassword: 'admin123', newPassword: '12345' })
+    body: JSON.stringify({ currentPassword: '12345678', newPassword: '12345' })
   });
   assert('T15: Password validation rejeita < 6 chars', shortPw.status === 400, 'status=' + shortPw.status);
 
