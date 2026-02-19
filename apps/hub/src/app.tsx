@@ -9,6 +9,15 @@ import { ProjectCreatePage } from '@/pages/projects/create';
 import { ProjectDetailPage } from '@/pages/projects/detail';
 import { KaiPage } from '@/pages/kai';
 import { SettingsPage } from '@/pages/settings';
+import { FactoryDashboardPage } from '@/pages/factory/dashboard';
+import { FactoryCreateRunPage } from '@/pages/factory/create-run';
+import { FactorySlugLayout } from '@/pages/factory/slug-layout';
+import { FactoryFeaturesPage } from '@/pages/factory/features';
+import { FactorySessionsPage } from '@/pages/factory/sessions';
+import { FactoryConsolePage } from '@/pages/factory/console';
+import { FactorySpecsPage } from '@/pages/factory/specs';
+import { FactoryProgressPage } from '@/pages/factory/progress';
+import { FactoryManagePage } from '@/pages/factory/manage';
 import { getUser, refresh, getAccessToken } from '@/lib/auth';
 import { useDarkMode } from '@/hooks/use-dark-mode';
 
@@ -82,6 +91,31 @@ function AppRoutes() {
           <Route path="/projects/:slug" element={<ProjectDetailPage />} />
           <Route path="/kai" element={<KaiPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Factory routes */}
+          <Route path="/factory" element={<FactoryDashboardPage />} />
+          <Route path="/factory/runs/new" element={<FactoryCreateRunPage />} />
+
+          {/* Slug-scoped factory routes with WorkspaceContext */}
+          <Route path="/factory/features/:slug" element={<FactorySlugLayout />}>
+            <Route index element={<FactoryFeaturesPage />} />
+          </Route>
+          <Route path="/factory/sessions/:slug" element={<FactorySlugLayout />}>
+            <Route index element={<FactorySessionsPage />} />
+            <Route path=":sid" element={<FactorySessionsPage />} />
+          </Route>
+          <Route path="/factory/console/:slug" element={<FactorySlugLayout />}>
+            <Route index element={<FactoryConsolePage />} />
+          </Route>
+          <Route path="/factory/specs/:slug/*" element={<FactorySlugLayout />}>
+            <Route path="*" element={<FactorySpecsPage />} />
+          </Route>
+          <Route path="/factory/progress/:slug" element={<FactorySlugLayout />}>
+            <Route index element={<FactoryProgressPage />} />
+          </Route>
+          <Route path="/factory/runs/:slug/manage" element={<FactorySlugLayout />}>
+            <Route index element={<FactoryManagePage />} />
+          </Route>
         </Route>
       </Routes>
       <Toaster />

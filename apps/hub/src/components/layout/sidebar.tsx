@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, FolderKanban, Bot, Settings, Menu, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Bot, Settings, Menu, LogOut, User, Factory } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ interface SidebarProps {
 const NAV_ITEMS = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/projects', icon: FolderKanban, label: 'Projetos' },
+  { to: '/factory', icon: Factory, label: 'Factory' },
   { to: '/kai', icon: Bot, label: 'Kai' },
   { to: '/settings', icon: Settings, label: 'Configurações' },
 ];
