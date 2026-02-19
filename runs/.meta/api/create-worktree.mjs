@@ -64,6 +64,7 @@ function isWorkingTreeClean(target) {
  * @param {string} [params.model] - modelo do agente
  * @param {number} [params.max_turns] - turns por sessão
  * @param {string} [params.runsDir] - diretório runs da fábrica
+ * @param {string} [params.worktreeDir] - diretório base para worktrees (default: '../')
  * @returns {Promise<object>} resultado com { slug, worktree_path, branch, run_config_path, init_result }
  */
 export async function createWorktree(params) {
@@ -77,6 +78,7 @@ export async function createWorktree(params) {
     model,
     max_turns,
     runsDir,
+    worktreeDir,
   } = params;
 
   const targetAbs = resolve(target);
@@ -99,7 +101,8 @@ export async function createWorktree(params) {
   const repoName = projectName || basename(targetAbs);
   const slug = `${repoName}-${milestone}-${harness.replace('claude-code', 'cc').replace('codex', 'cx')}`;
   const branch = `milestone/${milestone}`;
-  const worktreePath = resolve(targetAbs, '..', `${repoName}-${milestone}`);
+  const worktreeBase = worktreeDir ? resolve(targetAbs, worktreeDir) : resolve(targetAbs, '..');
+  const worktreePath = resolve(worktreeBase, milestone);
   const specsPath = specs || `milestones/${milestone}`;
 
   // 4. Criar worktree
@@ -165,12 +168,13 @@ if (isMainModule) {
       model:           { type: 'string' },
       'max-turns':     { type: 'string' },
       'runs-dir':      { type: 'string' },
+      'worktree-dir':  { type: 'string' },
     },
     strict: true,
   });
 
   if (!values.target || !values.milestone) {
-    console.error('Uso: node create-worktree.mjs --target <path> --milestone <name> [--harness claude-code|codex] [--force] [--project <name>] [--specs <path>] [--model <model>] [--max-turns <n>]');
+    console.error('Uso: node create-worktree.mjs --target <path> --milestone <name> [--harness claude-code|codex] [--force] [--project <name>] [--specs <path>] [--model <model>] [--max-turns <n>] [--worktree-dir <dir>]');
     process.exit(1);
   }
 
@@ -185,6 +189,7 @@ if (isMainModule) {
       model: values.model,
       max_turns: values['max-turns'] ? parseInt(values['max-turns'], 10) : undefined,
       runsDir: values['runs-dir'] ? resolve(values['runs-dir']) : undefined,
+      worktreeDir: values['worktree-dir'],
     });
 
     console.log(JSON.stringify(result, null, 2));
