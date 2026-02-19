@@ -46,8 +46,10 @@ agent-harness.pid
 agent-harness.state
 
 # Worktrees (workspaces de runs)
-worktree/
-worktrees/
+/worktree/
+/worktrees/
+/runs/worktrees/*/
+/runs/worktrees/*/**
 
 # Sessions (estado local do workspace)
 .sessions
